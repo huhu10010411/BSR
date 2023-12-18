@@ -1,0 +1,5 @@
+../Core/Src/Communication/Serial_log.c:16:6:init_Serial_log	16	static
+../Core/Src/Communication/Serial_log.c:21:6:Serial_log_string	24	static
+../Core/Src/Communication/Serial_log.c:27:6:Serial_log_buffer	16	static
+../Core/Src/Communication/Serial_log.c:32:6:Serial_log_number	32	static
+../Core/Src/Communication/Serial_log.c:40:6:Serial_log_testOperation	8	static

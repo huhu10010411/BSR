@@ -1,0 +1,2 @@
+../Core/Src/Application/App_MQTT.c:16:6:initApp_MQTT	16	static
+../Core/Src/Application/App_MQTT.c:24:6:processApp_MQTT	8	static

@@ -1,0 +1,13 @@
+../Core/Src/Communication/ServerMessage.c:21:6:FourbytenumbertoBuff	24	static
+../Core/Src/Communication/ServerMessage.c:30:10:Serialize_SSnodedata	40	static
+../Core/Src/Communication/ServerMessage.c:73:9:addCRCtoPack	24	static
+../Core/Src/Communication/ServerMessage.c:90:9:addTimetobuff	72	static
+../Core/Src/Communication/ServerMessage.c:118:6:ClearBuff	16	static
+../Core/Src/Communication/ServerMessage.c:122:9:createPack	32	static
+../Core/Src/Communication/ServerMessage.c:142:9:Serialize_Stationdata	24	static
+../Core/Src/Communication/ServerMessage.c:177:9:Serialize_Data	32	static
+../Core/Src/Communication/ServerMessage.c:189:9:addDatatoPack	24	static
+../Core/Src/Communication/ServerMessage.c:196:9:Serialize_addtionaldata	32	static
+../Core/Src/Communication/ServerMessage.c:271:9:Register2Server	304	static
+../Core/Src/Communication/ServerMessage.c:290:9:sendCMDtoServer	312	static
+../Core/Src/Communication/ServerMessage.c:310:9:sendData2Server	1072	static

@@ -1,0 +1,6 @@
+../Core/Src/main.c:103:6:HAL_UARTEx_RxEventCallback	16	static
+../Core/Src/main.c:121:5:main	32	static
+../Core/Src/main.c:272:6:SystemClock_Config	88	static
+../Core/Src/main.c:316:6:WriteIDtoFlash	24	static
+../Core/Src/main.c:322:6:ReadIDfromFlash	24	static
+../Core/Src/main.c:339:6:Error_Handler	4	static,ignoring_inline_asm

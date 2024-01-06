@@ -1,5 +1,5 @@
 Core/Src/Protocol/MQTT.o: ../Core/Src/Protocol/MQTT.c \
- D:/blue_pill_pj/uart_dma/Core/Inc/Protocol/MQTT.h \
+ D:/blue_pill_pj/Station/Core/Inc/Protocol/MQTT.h \
  ../Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f1xx.h \
  ../Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f103xb.h \
  ../Drivers/CMSIS/Include/core_cm3.h \
@@ -25,10 +25,13 @@ Core/Src/Protocol/MQTT.o: ../Core/Src/Protocol/MQTT.c \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_flash_ex.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_i2c.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pwr.h \
+ ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim.h \
+ ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h \
- D:/blue_pill_pj/uart_dma/Core/Inc/Device/SIM.h \
- D:/blue_pill_pj/uart_dma/Core/Inc/Communication/Serial_log.h
-D:/blue_pill_pj/uart_dma/Core/Inc/Protocol/MQTT.h:
+ D:/blue_pill_pj/Station/Core/Inc/Device/SIM.h \
+ D:/blue_pill_pj/Station/Core/Inc/Communication/Serial_log.h \
+ ../Core/Inc/String_process.h
+D:/blue_pill_pj/Station/Core/Inc/Protocol/MQTT.h:
 ../Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f1xx.h:
 ../Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f103xb.h:
 ../Drivers/CMSIS/Include/core_cm3.h:
@@ -54,6 +57,9 @@ D:/blue_pill_pj/uart_dma/Core/Inc/Protocol/MQTT.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_flash_ex.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_i2c.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pwr.h:
+../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim.h:
+../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h:
-D:/blue_pill_pj/uart_dma/Core/Inc/Device/SIM.h:
-D:/blue_pill_pj/uart_dma/Core/Inc/Communication/Serial_log.h:
+D:/blue_pill_pj/Station/Core/Inc/Device/SIM.h:
+D:/blue_pill_pj/Station/Core/Inc/Communication/Serial_log.h:
+../Core/Inc/String_process.h:

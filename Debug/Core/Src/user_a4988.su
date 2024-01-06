@@ -1,0 +1,7 @@
+../Core/Src/user_a4988.c:38:6:A4988_Init	4	static
+../Core/Src/user_a4988.c:43:6:A4988_EnableDriver	8	static
+../Core/Src/user_a4988.c:50:6:A4988_DisableDriver	8	static
+../Core/Src/user_a4988.c:57:6:A4988_SetDirection	16	static
+../Core/Src/user_a4988.c:69:6:A4988_StepByStep	24	static
+../Core/Src/user_a4988.c:86:6:A4988_StepByDegrees	16	static
+../Core/Src/user_a4988.c:92:6:A4988_ResetDriver	8	static

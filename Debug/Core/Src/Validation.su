@@ -1,0 +1,3 @@
+../Core/Src/Validation.c:15:6:validationID	24	static
+../Core/Src/Validation.c:31:6:stationID_validation	16	static
+../Core/Src/Validation.c:37:6:sensorID_validation	16	static

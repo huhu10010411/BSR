@@ -18,8 +18,65 @@ static uint8_t D2B(uint8_t decimal);
 void DS3231_Init(I2C_HandleTypeDef *handle)
 {
   i2c = handle;
+  DS3231_ClearAlarm1();
+}
+void epochtine2RTC(time_t epochtime,  _RTC *myRTC)
+{
+	struct tm *info;
+	info = localtime(&epochtime);
+	myRTC->Year = info->tm_year -100;
+	myRTC->Month =  info->tm_mon +1;
+	myRTC->Date = info->tm_mday;
+	myRTC->DaysOfWeek = info->tm_wday + 1;
+	myRTC->Hour = info->tm_hour + 7;
+	myRTC->Min = info->tm_min;
+	myRTC->Sec = info->tm_sec;
 }
 
+time_t RTC2epochtime (_RTC *RTCtime)
+{
+	struct tm t;
+	time_t epochtime;
+	t.tm_year = 2000 + RTCtime->Year -1900;
+	t.tm_mon = RTCtime->Month - 1;
+	t.tm_mday = RTCtime->Date;
+	t.tm_hour = RTCtime->Hour - 7;
+	t.tm_min = RTCtime->Min;
+	t.tm_sec = RTCtime->Sec;
+	t.tm_isdst = -1;
+	epochtime = mktime(&t);
+	return epochtime;
+}
+
+bool Leapyear_validation (uint16_t year)
+{
+	bool res = false;
+	if (year % 400 == 0)	{
+		res = true;
+	}
+   // not a leap year if divisible by 100
+   // but not divisible by 400
+   else if (year % 100 == 0) {
+	   res = false;
+   }
+   // leap year if not divisible by 100
+   // but divisible by 4
+   else if (year % 4 == 0) {
+	   res = true;
+   }
+   // all other years are not leap years
+   else {
+	   res = false;
+   }
+	return res;
+}
+bool Time_validation(_RTC rtc)
+{
+	if ( (rtc.Sec < 0) || (rtc.Sec >59 ) )	return false;
+	if ( (rtc.Min < 0) || (rtc.Min >59 ) )	return false;
+	if ( (rtc.Hour < 0) || (rtc.Sec >23 ) )	return false;
+	return true;
+}
 bool DS3231_GetTime(_RTC *rtc)
 {
   uint8_t startAddr = DS3231_REG_TIME;

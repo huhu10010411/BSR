@@ -10,6 +10,7 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include <time.h>
 
 #define DS3231_REG_TIME         0x00
 #define DS3231_REG_ALARM1       0x07
@@ -65,6 +66,8 @@ typedef struct
 } _RTC;
 
 void DS3231_Init(I2C_HandleTypeDef *handle);
+time_t RTC2epochtime (_RTC *RTCtime);
+void epochtine2RTC(time_t epochtime,  _RTC *myRTC);
 bool DS3231_GetTime(_RTC *rtc);
 bool DS3231_SetTime(_RTC *rtc);
 bool DS3231_ReadTemperature(float *temp);

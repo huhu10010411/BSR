@@ -10,20 +10,37 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <String_process.h>
+#include <flash_storage.h>
+#include "MQTT.h"
+#include "Task.h"
+#include "ds3231.h"
+#include "Validation.h"
 
-#define Rx_SIZE_CFG     20
-#define Main_SIZE_CFG    25
+#define Rx_SIZE_CFG     256
+#define Main_SIZE_CFG    1024
+#define GPS_RXBUFF_MAXLEN	512
 
 UART_HandleTypeDef *__SCFG_UART;
 DMA_HandleTypeDef  *__SCFG_DMA_UART;
 
 uint8_t Rxbuff_CFG[Rx_SIZE_CFG];
 uint8_t Mainbuff_CFG[Main_SIZE_CFG];
+uint8_t GPS_rxbuffer[GPS_RXBUFF_MAXLEN];
 uint16_t oldPos_CFG=0, newPos_CFG =0;
-uint8_t head_CFG = 0, tail_CFG = 0;
+uint16_t head_CFG = 0, tail_CFG = 0;
 
+uint16_t GPS_size = 0;
 uint8_t tx_buff[30];
 
+uint8_t volatile isSerialConfig = 0;
+
+static uint32_t tick = 0;
+
+Station_t *__MY_STATION_GPS;
+_RTC *__MY_RTC;
+
+uint8_t alarmflag = 0;
 
 void initSerial_CFG(UART_HandleTypeDef *huart,DMA_HandleTypeDef  *hdma)
 {
@@ -31,6 +48,13 @@ void initSerial_CFG(UART_HandleTypeDef *huart,DMA_HandleTypeDef  *hdma)
 	__SCFG_DMA_UART = hdma;
 	enableReceiveDMAtoIdle_CFG();
 }
+
+void initGPS(Station_t *station, _RTC *rtc)
+{
+	__MY_STATION_GPS = station;
+	__MY_RTC = rtc;
+}
+
 void enableReceiveDMAtoIdle_CFG(void)
 {
 	  HAL_UARTEx_ReceiveToIdle_DMA(__SCFG_UART, Rxbuff_CFG, Rx_SIZE_CFG);
@@ -69,126 +93,142 @@ void Serial_CFG_Callback(uint16_t Size)
 	 * Or else the head will be at the new position from the beginning
 	 */
 	if (head_CFG+Size < Main_SIZE_CFG) head_CFG = head_CFG+Size;
-	else head_CFG = head_CFG+Size - Main_SIZE_CFG;
+	else head_CFG = head_CFG + Size - Main_SIZE_CFG;
 
+	if ( checkTaskflag(TASK_GET_GPS_TIME) )	{
+		memset(GPS_rxbuffer, 0, GPS_RXBUFF_MAXLEN);
+		memcpy(GPS_rxbuffer, Rxbuff_CFG, Size);
+		GPS_size = Size;
+		getGPS_time(__MY_RTC);
+	}
 
 	enableReceiveDMAtoIdle_CFG();
 	/*
 	 * Processing data
 	 */
 
-}
-uint8_t nID_validation (uint8_t *str, uint8_t ID,uint8_t NumofID)
-{
-	if (ID >=0x51 && ID <=0xFE)
-	{
-		uint8_t ID_buff[NumofID];
-		sprintf((char*)ID_buff,"%d",ID);
-		if (!memcmp(str,ID_buff,NumofID))
-		{
-			return 1;
-		}
+	if (isWordinBuff(Rxbuff_CFG, Size, (uint8_t*)"MCFG+")) {
+		isSerialConfig = 1;
 	}
-	return 0;
 }
 
-uint8_t sID_validation(uint8_t *str, uint8_t ID,uint8_t NumofID)
-{
-	if (ID >=0x01 && ID <=0x50)
-	{
-		uint8_t ID_buff[NumofID];
-		sprintf((char*)ID_buff,"%d",ID);
-		if (!memcmp(str,ID_buff,NumofID))
-		{
-			return 1;
-		}
-	}
 
-	return 0;
-}
 void processing_CMD(uint8_t *myID)
 {
 
+	if (isSerialConfig)	{
+
 	uint8_t len;
-	uint8_t size;
+	uint16_t size = 0;
 	uint8_t tmpID;
+	uint8_t tmpbuff[10];
 	uint8_t *Processingbuff;
+
+	//Copy data to processing buffer
 	if(head_CFG > tail_CFG)
 	{
-		size = head_CFG -tail_CFG+1;
-		Processingbuff = (uint8_t*)malloc(size*sizeof(uint8_t));
-		memcpy((uint8_t*)Processingbuff,(uint8_t*)Mainbuff_CFG+ tail_CFG, size);
+		size = head_CFG - tail_CFG;
+		Processingbuff = (uint8_t*)malloc( size*sizeof(uint8_t) );
+		memcpy((uint8_t*)Processingbuff, (uint8_t*)Mainbuff_CFG+ tail_CFG, size);
 	}
 	else if (head_CFG < tail_CFG)
 	{
-		size = Main_SIZE_CFG - tail_CFG+ head_CFG;
-		Processingbuff = (uint8_t*)malloc(size*sizeof(uint8_t));
-		memcpy((uint8_t*)Processingbuff,(uint8_t*)Mainbuff_CFG + tail_CFG, Main_SIZE_CFG - tail_CFG);
-		memcpy((uint8_t*)Processingbuff+Main_SIZE_CFG - tail_CFG,(uint8_t*)Mainbuff_CFG, head_CFG);
+		size = Main_SIZE_CFG - tail_CFG + head_CFG;
+		Processingbuff = (uint8_t*)malloc( size*sizeof(uint8_t) );
+		memcpy((uint8_t*)Processingbuff, (uint8_t*)Mainbuff_CFG + tail_CFG, Main_SIZE_CFG - tail_CFG);
+		memcpy((uint8_t*)Processingbuff + Main_SIZE_CFG - tail_CFG, (uint8_t*)Mainbuff_CFG, head_CFG);
 	}
-	else{
-		return;
-	}
+	else return;
 
-	uint8_t index =0;
-	while (index < size)
-	{
+	// Check whether the Command "SET ID" in the buffer
+	uint8_t *currPOS = isWordinBuff(Processingbuff, size, (uint8_t*)"MCFG+SETID:");
+	if (  currPOS != NULL)	{
+		uint16_t currsize = getRemainsize(currPOS, Processingbuff, size);
+		memset(tmpbuff, 0, 10);
+		// Get ID to buffer
+		if ( !getBetween( (uint8_t*)":", (uint8_t*)";", currPOS, currsize, tmpbuff) ) {
+			free(Processingbuff);
+			MarkAsReadData_CFG();
+			return;
+		}
+		//Convert buffer ID to uint8_t value
+		tmpID = atoi( (char*)tmpbuff );
 
-			if (Processingbuff[index]=='M' && Processingbuff[index+1]=='C'
-					&& Processingbuff[index+2]=='F'&& Processingbuff[index+3]=='G'
-							&& Processingbuff[index+4]=='+' )
-			{
-				index+= 5;
-				uint8_t tmpbuff[10] ;
-				memcpy((uint8_t*)tmpbuff,(uint8_t*)&Processingbuff[index],10);
-				if (strstr((char*)tmpbuff,"SETID:"))
-				{
-					uint8_t NumofID =0;
-					if (tmpbuff[7] ==';')
-					{
-						tmpID = (tmpbuff[6]-48);
-						index+=7;
-						NumofID =1;
-					}
-					else if(tmpbuff[8] ==';')
-					{
-						tmpID = (tmpbuff[6]-48)*10 + tmpbuff[7]-48;
-						index+=8;
-						NumofID =2;
-					}
-					else if (tmpbuff[9]==';')
-					{
-						tmpID= (tmpbuff[6]-48)*100 + (tmpbuff[7]-48)*10 + tmpbuff[8]-48;
-						index+=9;
-						NumofID =3;
-					}
-					if (sID_validation(tmpbuff+6, tmpID, NumofID))
-					{
-						*myID =tmpID;
-						len =sprintf((char*)tx_buff,"MCFG+SETID:%d OK",*myID);
-						HAL_UART_Transmit_DMA(__SCFG_UART, tx_buff, len);
-					}
-					else
-					{
-						HAL_UART_Transmit_DMA(__SCFG_UART, (uint8_t*)"MCFG+SETID ERROR", 16);
-					}
+		// Validation the ID
+		if ( stationID_validation(tmpID) )	{
+			// Save ID
+			*myID = tmpID;
+			// Save ID to flash
+			Flash_Write_NUM(FLASH_PAGE_127, tmpID);
+			// Respond OK to user
+			len =sprintf((char*)tx_buff, "MCFG+SETID:%d OK", tmpID);
+			HAL_UART_Transmit(__SCFG_UART, tx_buff, len, 2000);
+		}
+		else {
+			HAL_UART_Transmit(__SCFG_UART, (uint8_t*)"MCFG+SETID ERROR", 16, 2000);
+		}
 
-				}
-				else if(strstr((char*)tmpbuff,"GETID?"))
-				{
-					len = sprintf((char*)tx_buff,"MCFG+GETID:%d OK",*myID);
-					HAL_UART_Transmit_DMA(__SCFG_UART,(uint8_t*) tx_buff, len);
-					index+= 6;
-				}
-
-			}
-			else index++;
 	}
 
+	// Check whether the Command "GET ID" in the buffer
+	if ( isWordinBuff(Processingbuff, size, (uint8_t*)"MCFG+GETID?") != NULL )	{
+		// Respond ID to user
+		len = sprintf( (char*)tx_buff,"MCFG+GETID:%d OK", *myID);
+		HAL_UART_Transmit(__SCFG_UART, (uint8_t*)tx_buff, len, 2000);
+	}
 	free(Processingbuff);
+
+	MarkAsReadData_CFG();
+	isSerialConfig = 0;
+	}
 }
 
 void MarkAsReadData_CFG(void)
 {
 	tail_CFG = head_CFG;
+}
+
+uint8_t getGPS_time(_RTC *myRTC)
+{
+//	if (__MY_GPS->getFlag) return 0;
+	uint16_t gpslen = GPS_size;
+	uint8_t *currPos = isWordinBuff(GPS_rxbuffer, gpslen, (uint8_t*)"$GPRMC");
+	if ( currPos == NULL )	{
+		return 0;
+	}
+	uint16_t remainlen = getRemainsize(currPos, GPS_rxbuffer, gpslen);
+	// Get time to buffer
+	uint8_t timebuffer [10];
+	if ( getBetween((uint8_t*)",", (uint8_t*)".", currPos, remainlen, timebuffer) != 6 )	{
+		return 0;
+	}
+	// Convert time from buffer and save to myRTC
+	uint8_t tmphour[3];
+	uint8_t tmpmin[3];
+	uint8_t tmpsec[3];
+	memcpy(tmphour, timebuffer, 2);
+	memcpy(tmpmin, timebuffer + 2, 2);
+	memcpy(tmpsec, timebuffer + 4, 2);
+	myRTC->Hour = atoi((char*)tmphour) + (uint8_t)MY_TIME_ZONE;
+	myRTC->Min = atoi((char*)tmpmin);
+	myRTC->Sec = atoi((char*)tmpsec);
+	if ( !DS3231_SetTime(myRTC) )	return 0;
+	HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+	triggerTaskflag(TASK_GET_GPS_TIME, FLAG_DIS);
+	return 1;
+}
+
+void testSynchronize()
+{
+	DS3231_GetTime(__MY_RTC);
+	if (HAL_GetTick() - tick > 5000)	{
+		tick = HAL_GetTick();
+		triggerTaskflag(TASK_GET_GPS_TIME, FLAG_EN);
+	}
+	static uint8_t i = 35;
+	if (!alarmflag)	{
+		alarmflag = 1;
+		DS3231_ClearAlarm1();
+		DS3231_SetAlarm1(ALARM_MODE_ALL_MATCHED, __MY_RTC->Date, __MY_RTC->Hour , i++ , 0);
+	}
 }

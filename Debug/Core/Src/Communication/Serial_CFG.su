@@ -1,7 +1,8 @@
-../Core/Src/Communication/Serial_CFG.c:28:6:initSerial_CFG	16	static
-../Core/Src/Communication/Serial_CFG.c:34:6:enableReceiveDMAtoIdle_CFG	8	static
-../Core/Src/Communication/Serial_CFG.c:39:6:Serial_CFG_Callback	24	static
-../Core/Src/Communication/Serial_CFG.c:81:9:nID_validation	48	dynamic
-../Core/Src/Communication/Serial_CFG.c:95:9:sID_validation	48	dynamic
-../Core/Src/Communication/Serial_CFG.c:109:6:processing_CMD	40	static
-../Core/Src/Communication/Serial_CFG.c:191:6:MarkAsReadData_CFG	4	static
+../Core/Src/Communication/Serial_CFG.c:45:6:initSerial_CFG	16	static
+../Core/Src/Communication/Serial_CFG.c:52:6:initGPS	16	static
+../Core/Src/Communication/Serial_CFG.c:58:6:enableReceiveDMAtoIdle_CFG	8	static
+../Core/Src/Communication/Serial_CFG.c:63:6:Serial_CFG_Callback	24	static
+../Core/Src/Communication/Serial_CFG.c:116:6:processing_CMD	56	static
+../Core/Src/Communication/Serial_CFG.c:186:6:MarkAsReadData_CFG	4	static
+../Core/Src/Communication/Serial_CFG.c:191:9:getGPS_time	56	static
+../Core/Src/Communication/Serial_CFG.c:221:6:testSynchronize	24	static

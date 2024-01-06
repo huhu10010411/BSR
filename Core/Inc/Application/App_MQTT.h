@@ -9,10 +9,11 @@
 #define INC_APPLICATION_APP_MQTT_H_
 
 
+#include "SIM.h"
+#include "main.h"
 
 
-
-void initApp_MQTT(void);
+void initApp_MQTT(Station_t *station, SIM_t *sim);
 
 void processApp_MQTT(void);
 

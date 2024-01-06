@@ -1,0 +1,9 @@
+../Core/Src/user_lcd1604.c:43:6:LCD_Init	8	static
+../Core/Src/user_lcd1604.c:67:6:LCD_SendCommand	16	static
+../Core/Src/user_lcd1604.c:88:6:LCD_SendData	16	static
+../Core/Src/user_lcd1604.c:109:6:LCD_GotoXY	24	static
+../Core/Src/user_lcd1604.c:119:6:LCD_Print	16	static
+../Core/Src/user_lcd1604.c:125:6:LCD_PrintNumber	32	static
+../Core/Src/user_lcd1604.c:132:6:LCD_Clear	8	static
+../Core/Src/user_lcd1604.c:136:6:LCD_ClearXY	16	static
+../Core/Src/user_lcd1604.c:141:6:LCD_ClearRow	24	static

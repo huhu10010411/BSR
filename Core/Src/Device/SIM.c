@@ -5,25 +5,27 @@
  *      Author: Admin
  */
 
-#include <stdio.h>
 #include "SIM.h"
+#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include "MQTT.h"
 #include "Serial_log.h"
+#include "String_process.h"
+#include "Validation.h"
+#include "Task.h"
 
 #define SIM_BUFF_SIZE        512
 #define SIM_RXBUFF_SIZE      256
-#define SIM_SMS_RXSIZE       128
-#define MQTT_RXBUFF_SIZE     1024
+#define SIM_SMS_RXSIZE       256
 
-#define SMS_CMD_STA			"SMSCMD STATE"
-#define SMS_CMD_CALIB		"SMSCMD CALIB"
+
+//#define SMS_CMD_STA			"SMSCMD STATE"
+//#define SMS_CMD_CALIB		"SMSCMD CALIB"
 UART_HandleTypeDef *__SIM_UART;
 DMA_HandleTypeDef  *__SIM_DMA_UART;
 SIM_t	*__SIM;
 
-uint8_t SIM_DataAvailable =0;
 uint16_t oldPos =0, newPos =0;
 uint8_t SIMbuff[SIM_BUFF_SIZE];
 uint8_t SIMRxbuff[SIM_RXBUFF_SIZE];
@@ -32,11 +34,14 @@ uint8_t SMS_Rxbuff [SIM_SMS_RXSIZE];
 uint8_t MQTT_Rxbuff [MQTT_RXBUFF_SIZE];
 uint16_t head =0, tail=0;
 uint16_t mqtttail=0, mqtthead= 0;
-volatile uint8_t newSMS =0;
+volatile uint8_t newSMS = 0;
 volatile uint8_t newMQTTmsg =0;
 uint8_t newMQTTmsgReceiving=0;
 
 uint8_t getSMS = 0;
+uint16_t SMS_len = 0;
+
+
 
 void initSIM(UART_HandleTypeDef *huart, DMA_HandleTypeDef  *hdma , SIM_t *mySIM)
 {
@@ -52,48 +57,9 @@ void enableReceiveDMAtoIdle_SIM(void)
 	  __HAL_DMA_DISABLE_IT(__SIM_DMA_UART,DMA_IT_HT);
 }
 
-/*
- *  @Return : if the "word" is presented in the "databuff",
- *  			function return the pointer point to the first element
- *  			of "word" in "databuff"
- *  		else return NULL
- */
-uint8_t* isWordinBuff(uint8_t *databuff,uint16_t buff_size, uint8_t *word)
-{
-	uint8_t wordlen = strlen((char*)word);
-	for (uint16_t i = 0; i< buff_size - wordlen; i++)
-	{
-		if (!memcmp(databuff +i,word,wordlen))
-		{
-			return databuff+ i;
-		}
-	}
-	return NULL;
-}
-uint16_t cpyBuff2Buff(uint8_t *Destbuff, uint8_t *SourceBuff,uint16_t Sourcebuff_maxsize, uint16_t head, uint16_t tail)
-{
-	uint16_t size = 0;
-	if (head == tail )
-	{
-		return 0;
-	}
-	else if (head > tail)
-	{
-		size = head -tail;
-		memcpy(Destbuff, SourceBuff+tail, size);
-	}
-	else
-	{
-		size = Sourcebuff_maxsize - tail + head;
-		memcpy(Destbuff, SourceBuff + tail, Sourcebuff_maxsize - tail);
-		memcpy (Destbuff+ Sourcebuff_maxsize - tail, SourceBuff, head);
-	}
-	return size;
-}
 void SIM_callback(uint16_t Size)
 {
 
-	SIM_DataAvailable = 1;
 
 		oldPos = newPos;  // Update the last position before copying new data
 
@@ -120,9 +86,6 @@ void SIM_callback(uint16_t Size)
 			newPos = Size+oldPos;
 		}
 
-//		Serial_log_string("Rx: ");
-//		Serial_log_buffer(SIMRxbuff, Size);
-
 		/* Update the position of the Head
 		 * If the current position + new size is less then the buffer size, Head will update normally
 		 * Or else the head will be at the new position from the beginning
@@ -133,43 +96,108 @@ void SIM_callback(uint16_t Size)
 		/* start the DMA again */
 		enableReceiveDMAtoIdle_SIM();
 
-		/* Check OK within incoming data*/
-		if (isWordinBuff(SIMRxbuff, Size, (uint8_t*)"+CMTI:SM") !=NULL)
+		// New SMS coming
+		if (isWordinBuff(SIMRxbuff, Size, (uint8_t*)"+CMTI: \"SM\"") != NULL)
 		{
-			newSMS =1;
-		}
-		if ( newMQTTmsgReceiving || ( isWordinBuff(SIMRxbuff, Size, (uint8_t*) "+CMQTTRXSTART:") != NULL) )
-		{
-			if( !newMQTTmsgReceiving )
-			{
-				mqtttail = head- Size;
-			}
-			//receive MQTT sub message
-			newMQTTmsgReceiving = 1;
-		}
-		if ( newMQTTmsgReceiving && ( isWordinBuff(SIMRxbuff, Size,(uint8_t*) "+CMQTTRXEND:") != NULL ) )
-		{
-			newMQTTmsgReceiving = 0;
-//			newMQTTmsg =1;
-			mqtthead = head;
-			memset(MQTT_Rxbuff, 0, MQTT_RXBUFF_SIZE);
-			uint16_t cpy_len = cpyBuff2Buff (MQTT_Rxbuff, SIMbuff, SIM_BUFF_SIZE, mqtthead, mqtttail);
-			MQTT_receive(MQTT_Rxbuff, cpy_len);
+			newSMS = 1;
 		}
 
-//		for (int i=0; i<Size; i++)
-//		{
-//			if ((SIMRxbuff[i] == '+') && (SIMRxbuff[i+1] == 'C')&& (SIMRxbuff[i+2] == 'M')&& (SIMRxbuff[i+3] == 'T')&& (SIMRxbuff[i+4] == 'I')&& (SIMRxbuff[i+5] == ':')&& (SIMRxbuff[i+8] == 'S')&& (SIMRxbuff[i+9] == 'M'))
-//			{
-//				newSMS = 1;
-//			}
-//		}
+		// Read SMS
+		if (isWordinBuff(SIMRxbuff, Size, (uint8_t*)"+CMGR:") != NULL)	{
+			memcpy(SMS_Rxbuff, SIMRxbuff, Size);
+			SMS_len = Size;
+		}
+		if (isWordinBuff(SIMRxbuff, Size, (uint8_t*)"+CMGL: ") != NULL)	{
+			memcpy(SMS_Rxbuff, SIMRxbuff, Size);
+			SMS_len = Size;
+		}
+		// New MQTT message
+		if ( (isWordinBuff(SIMRxbuff, Size, (uint8_t*) "+CMQTTRXSTART:") != NULL)
+				&& ( isWordinBuff(SIMRxbuff, Size,(uint8_t*) "+CMQTTRXEND:") != NULL ) )  	{
+			memcpy(MQTT_Rxbuff, SIMRxbuff, Size);
+			MQTT_receive(MQTT_Rxbuff, Size);
+		}
+
+//		Serial_log_string("Rx: ");
+//		Serial_log_buffer(SIMRxbuff, Size);
+//		Serial_log_string(" ");
+
+}
+
+SIM_res_t SIM_checkMsg(uint8_t *Msg, uint16_t timeout)
+{
+	SIM_res_t res= SIM_NO_RES;
+	timeout /= 500;
+	uint8_t dataSize = 0;
+	uint8_t *tmpdbuff = (uint8_t*)malloc(512);
+
+	for (uint16_t i = 0; i < 500 ; i++)
+	{
+		HAL_Delay(timeout);
+
+		if (head > tail)
+		{
+			dataSize = head - tail ;
+//			tmpdbuff = (uint8_t*)malloc(dataSize*sizeof(uint8_t));
+			memset( (char*)tmpdbuff, 0, 512 );
+			memcpy(tmpdbuff, SIMbuff + tail, dataSize);
+		}
+		else if ( head < tail )
+		{
+			dataSize = SIM_BUFF_SIZE - tail + head ;
+//		 	tmpdbuff = (uint8_t*)malloc(dataSize*sizeof(uint8_t));
+			memset( (char*)tmpdbuff, 0, 512 );
+			memcpy(tmpdbuff, SIMbuff + tail, SIM_BUFF_SIZE - tail);
+			memcpy(tmpdbuff + SIM_BUFF_SIZE - tail, SIMbuff, head);
+		}
+		else {
+			continue;
+		}
+
+		if ( isWordinBuff(tmpdbuff, dataSize, Msg) != NULL )	{
+//			Serial_log_string("msg: ");
+//			Serial_log_buffer(tmpdbuff, dataSize);
+//			Serial_log_string(";");
+//			Serial_log_string("\ntail: ");
+//			Serial_log_number(tail);
+//			Serial_log_string(" ");
+//			Serial_log_string("\nhead: ");
+//			Serial_log_number(head);
+//			Serial_log_string(" ");
+			free(tmpdbuff);
+			return SIM_RES_MSG ;
+		}
+
+		if ( isWordinBuff(tmpdbuff, dataSize, (uint8_t*)"ERROR") != NULL )	{
+//			Serial_log_string("err: ");
+//			Serial_log_buffer(tmpdbuff, dataSize);
+//			Serial_log_string(";");
+			free(tmpdbuff);
+			return SIM_ERROR ;
+		}
+	}
+
+//	Serial_log_string("no res: ");
+//	Serial_log_buffer(tmpdbuff, dataSize);
+//	Serial_log_string(";");
+//	Serial_log_string("\ntail: ");
+//	Serial_log_number(tail);
+//	Serial_log_string(" ");
+//	Serial_log_string("\nhead: ");
+//	Serial_log_number(head);
+//	Serial_log_string(" ");
+	free(tmpdbuff);
+ 	return res;
+
 }
 
 SIM_res_t SIM_sendCMD(uint8_t *cmd, uint8_t *checkResMsg, uint8_t CheckResENorDIS, uint8_t ENorDISmarkasread, uint32_t timeout)
 {
 	uint8_t len = sprintf( (char*)SIM_Txbuff, "%s\r\n", cmd);
-	HAL_UART_Transmit(__SIM_UART, SIM_Txbuff, len, 0xFFFF);
+	if ( HAL_UART_Transmit(__SIM_UART, SIM_Txbuff, len, 0xFFFF) != HAL_OK )	{
+		Serial_log_string("UART transmit ERROR\r\n");
+	}
+
 	if (CheckResENorDIS == ENABLE_SIM_CHECKRES)
 	{
 		SIM_res_t res = SIM_checkMsg(checkResMsg, timeout);
@@ -184,128 +212,340 @@ SIM_res_t SIM_sendCMD(uint8_t *cmd, uint8_t *checkResMsg, uint8_t CheckResENorDI
 	}
 	return SIM_NO_RES;
 }
-void RemoveNULLinbuff(uint8_t *buff, uint8_t bufflen)
-{
-	for (uint8_t i =0; i< bufflen; i ++)
-	{
-		if (buff[i]== '\0')
-		{
-			buff[i]= '_' ;
-		}
-	}
-}
 
-SIM_res_t SIM_checkMsg(uint8_t *Msg, uint16_t timeout)
-{
-	SIM_res_t res= SIM_NO_RES;
-	timeout /= 500;
-	uint8_t dataSize;
-	uint8_t tmpdbuff[256];
 
-	for (uint16_t i = 0; i < 500 ; i++)
-	{
-		HAL_Delay(timeout);
-
-		if (head > tail)
-		{
-			dataSize = head - tail ;
-			memset( (char*)tmpdbuff, 0, 256 );
-			memcpy(tmpdbuff, SIMbuff + tail, dataSize);
-		}
-		else if ( head < tail )
-		{
-			dataSize = SIM_BUFF_SIZE - tail + head ;
-			memset( (char*)tmpdbuff, 0, 256 );
-			memcpy(tmpdbuff, SIMbuff + tail, SIM_BUFF_SIZE - tail);
-			memcpy(tmpdbuff + SIM_BUFF_SIZE - tail, SIMbuff, head);
-		}
-
-//		RemoveNULLinbuff(tmpbuff, Size);
-
-		if ( isWordinBuff(tmpdbuff, dataSize, Msg) != NULL )	{
-//			Serial_log_string("msg: ");
-//			Serial_log_buffer(tmpdbuff, dataSize);
-//			Serial_log_string(";");
-//			Serial_log_string("\ntail: ");
-//			Serial_log_number(tail);
-//			Serial_log_string(" ");
-//			Serial_log_string("\nhead: ");
-//			Serial_log_number(head);
-//			Serial_log_string(" ");
-			return SIM_RES_MSG ;
-		}
-
-		if ( isWordinBuff(tmpdbuff, dataSize, (uint8_t*)"ERROR") != NULL )	{
-//			Serial_log_string("err: ");
-//			Serial_log_buffer(tmpdbuff, dataSize);
-//			Serial_log_string(";");
-			return SIM_ERROR ;
-		}
-	}
-
-//	Serial_log_string("no res: ");
-//	Serial_log_buffer(tmpdbuff, dataSize);
-//	Serial_log_string(";");
-//	Serial_log_string("\ntail: ");
-//	Serial_log_number(tail);
-//	Serial_log_string(" ");
-//	Serial_log_string("\nhead: ");
-//	Serial_log_number(head);
-//	Serial_log_string(" ");
-
- 	return res;
-
-}
 
 void MarkAsReadData_SIM(void)
 {
 	tail = head;
 }
-uint8_t getCMDnNumber(SMS_t *SMS)
+
+uint16_t getAfterword(uint8_t *srcBuffer, uint16_t srcBufferlen, uint8_t *word, uint8_t *getBuffer)
 {
-	uint8_t res = 0;
-	uint8_t i =0;
-	uint8_t tmpCMDbuff [13];
-	uint8_t *p;
-
-		if ((p=(uint8_t*) strstr((char*)SMS_Rxbuff,"REC UNREAD")) != NULL)
-		{
-			i+=14;
-			uint8_t j =0;
-			while  (*(p+i+j) != '\"' && j<12)
-			{
-				SMS->Number[j] = *(p+i+j);
-				j++;
-			}
-			SMS->Number[11] = '\0';
-			while (*(p+i) != '\n' && i <SIM_SMS_RXSIZE)
-			{
-				i++;
-			}
-			i++;
-			memcpy((char*)tmpCMDbuff,(char*)(p+i),12);
-			if (strstr((char*)tmpCMDbuff,SMS_CMD_STA) != NULL)
-			{
-				SMS->cmd =SMS_GET_STATUS;
-				res= 1;
-			}
-			if (strstr((char*)tmpCMDbuff,SMS_CMD_CALIB) != NULL)
-			{
-				SMS->cmd= SMS_CALIBRATION;
-				res= 1;
-			}
-		}
-
-	return res;
-
+	uint16_t remainlen = 0;
+	uint8_t *currPOS = isWordinBuff(srcBuffer, srcBufferlen, word);
+	if ( currPOS == NULL ) return	0;
+	currPOS += strlen((char*)word);
+	remainlen = getRemainsize(currPOS, srcBuffer, srcBufferlen);
+	memcpy(getBuffer, currPOS, remainlen);
+	return remainlen;
 }
-uint8_t processingSMS(SMS_t *mySMS)
+uint16_t SMS_getindex(uint8_t *SMSbuffer,uint16_t SMS_bufferlen)
 {
-	getSMS =1;
-	if (!SIM_sendCMD((uint8_t*)"AT+CMGL=\"REC UNREAD\"", (uint8_t*)"OK", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 1000))		return 0;
-	getSMS =0;
+	uint8_t contentbuffer[SMS_bufferlen];
+	uint16_t contentlen = getAfterword(SMSbuffer, SMS_bufferlen, (uint8_t*)"+CMGL:", contentbuffer);
+	if (!contentlen) {
+		contentlen = getAfterword(SMSbuffer, SMS_bufferlen, (uint8_t*)"+CMGR:", contentbuffer);
+	}
+	if (!contentlen) return 0;
 
-	if (!getCMDnNumber(mySMS))		return 0;
+	uint8_t indexbuffer[10];
+	getBetween((uint8_t*)" ", (uint8_t*)",", contentbuffer, contentlen, indexbuffer);
+	return atoi((char*)indexbuffer);
+}
+
+uint8_t SMS_getPhonenumb (uint8_t *SMSbuffer, uint16_t SMS_bufferlen, uint8_t *Phonenumb_buffer )
+{
+	uint8_t contentbuffer[SMS_bufferlen];
+	uint16_t contentlen = getAfterword(SMSbuffer, SMS_bufferlen, (uint8_t*)"+CMGL: ", contentbuffer);
+	if (!contentlen) {
+		contentlen = getAfterword(SMSbuffer, SMS_bufferlen, (uint8_t*)"+CMGR: ", contentbuffer);
+	}
+	if (!contentlen) return 0;
+//	uint8_t *currPOS;
+//	uint16_t remainlen;
+//	for (uint8_t i = 0; i<2 ; i++)
+//	{
+//		currPOS = isWordinBuff(contentbuffer, contentlen, (uint8_t*)",");
+//		if ( currPOS == NULL ) return	0;
+//		remainlen = getRemainsize(currPOS, contentbuffer, contentlen);
+//		currPOS++;
+//	}
+	return getBetween((uint8_t*)"+", (uint8_t*)"\"", contentbuffer, contentlen, Phonenumb_buffer);
+}
+
+uint16_t SMS_getContent (uint8_t *SMSbuffer, uint16_t SMS_bufferlen, uint8_t *Content_buffer )
+{
+	uint8_t contentbuffer[SMS_bufferlen];
+	uint16_t contentlen = getAfterword(SMSbuffer, SMS_bufferlen, (uint8_t*)"+CMGL: ", contentbuffer);
+	if (!contentlen) {
+		contentlen = getAfterword(SMSbuffer, SMS_bufferlen, (uint8_t*)"+CMGR: ", contentbuffer);
+	}
+	if (!contentlen) return 0;
+
+	return getBetween((uint8_t*)"\n", (uint8_t*)"\r", contentbuffer, contentlen, Content_buffer);
+}
+uint16_t stringIDtoHexID (uint8_t *stringIDbuffer, uint8_t *hexIDbuffer, const char *separator, ID_t idtype)
+{
+	uint8_t *token = (uint8_t*)strtok((char*)stringIDbuffer, separator);
+	uint16_t hexbufferlen = 0;
+
+	while (token != NULL)	{
+		uint16_t tmp = atoi((char*)token);
+		if ( validationID(tmp, idtype) )	{
+			hexIDbuffer[hexbufferlen++] = tmp;
+		}
+		token = (uint8_t*)strtok(NULL, separator);
+	}
+	return hexbufferlen;
+}
+
+
+
+
+uint8_t SMSaddData(SMS_CMD_t smsCMD, uint8_t *contentbuffer, uint16_t contentlen, uint8_t *phonenumb)
+{
+	uint8_t *currPOS;
+	uint16_t remainlen;
+	uint8_t IDbuffer[contentlen];
+	uint8_t Timebuffer[10];
+	uint16_t time_delay;
+	uint16_t datalen = 0;
+	uint8_t phonenumblen = strlen((char*)phonenumb);
+
+	uint8_t *Detect_msgType;
+	SMS_request_t *Detect_Request;
+	uint8_t getIDflag = 0;
+	uint8_t getTimeflag = 0;
+	uint8_t getSflag = 0;
+	ID_t idtype = ID_STATION;
+	switch (smsCMD)	{
+		case SMS_CMD_CTRL_ON:
+			Detect_msgType = (uint8_t*)SMS_MSG_CTRL_ON;
+			Detect_Request = &__SIM->sms.CtrlON;
+			getIDflag = 1;
+			getTimeflag = 1;
+			break;
+		case SMS_CMD_CTRL_OFF:
+			Detect_msgType = (uint8_t*)SMS_MSG_CTRL_OFF;
+			Detect_Request = &__SIM->sms.CtrlOFF;
+			getIDflag = 1;
+			getTimeflag = 1;
+			break;
+		case SMS_CMD_CTRL_DEC:
+			Detect_msgType = (uint8_t*)SMS_MSG_CTRL_DEC;
+			Detect_Request = &__SIM->sms.CtrlDEC;
+			getIDflag = 1;
+			getTimeflag = 1;
+			break;
+		case SMS_CMD_CTRL_INC:
+			Detect_msgType = (uint8_t*)SMS_MSG_CTRL_INC;
+			Detect_Request = &__SIM->sms.CtrlINC;
+			getIDflag = 1;
+			getTimeflag = 1;
+			break;
+		case SMS_CMD_CTRL_CALIB:
+			Detect_msgType = (uint8_t*)SMS_MSG_CTRL_CALIB;
+			Detect_Request = &__SIM->sms.CtrlCALIB;
+			getTimeflag = 1;
+			break;
+		case SMS_CMD_GET_STATUS:
+			Detect_msgType = (uint8_t*)SMS_MSG_GET_STATUS;
+			Detect_Request = &__SIM->sms.GetStatus;
+			break;
+		case SMS_CMD_GET_STATION:
+			Detect_msgType = (uint8_t*)SMS_MSG_GET_STATION;
+			Detect_Request = &__SIM->sms.GetStation;
+			getIDflag = 1;
+			getSflag = 1;
+			break;
+		case SMS_CMD_GET_SENSOR:
+			Detect_msgType = (uint8_t*)SMS_MSG_GET_SENSOR;
+			Detect_Request = &__SIM->sms.GetSensor;
+			getIDflag = 1;
+			getSflag = 1;
+			idtype = ID_SENSOR;
+			break;
+		default:
+			break;
+		}
+	if (Detect_msgType == NULL)	return 0;
+
+	currPOS = isWordinBuff(contentbuffer, contentlen, (uint8_t*)Detect_msgType);
+	if (currPOS == NULL) 	return 0;
+
+	remainlen = getRemainsize(currPOS, contentbuffer, contentlen);
+
+	/* Get ID list */
+	if (getIDflag)	{
+		uint8_t tmplen;
+		if (getSflag)	{
+			tmplen = getBetween((uint8_t*)":", (uint8_t*)";", currPOS, remainlen, IDbuffer);
+		}
+		else {
+			tmplen = getBetween((uint8_t*)":", (uint8_t*)":", currPOS, remainlen, IDbuffer);
+		}
+		currPOS += strlen((char*)Detect_msgType) + tmplen + 1;
+		remainlen = getRemainsize(currPOS, contentbuffer, contentlen);
+		datalen = stringIDtoHexID(IDbuffer, Detect_Request->data, ",", idtype);
+	}
+
+	/* Get time delay*/
+	if (getTimeflag)	{
+		getBetween((uint8_t*)":", (uint8_t*)";", currPOS, remainlen, Timebuffer);
+		time_delay = atoi((char*)Timebuffer);
+		twobyte2buff(Detect_Request->data +datalen, time_delay);
+		datalen += 2;
+	}
+	memcpy(Detect_Request->phonenumb, phonenumb, phonenumblen);
+	memcpy(Detect_Request->data + datalen, phonenumb, phonenumblen);
+	datalen += phonenumblen;
+	Detect_Request->datalength = datalen;
+	return 1;
+}
+static uint8_t SMS_checkCMD(uint8_t *contentbuffer, uint16_t contentlen, uint8_t *phonenumb)
+{
+	uint8_t *currPOS;
+
+	currPOS = isWordinBuff(contentbuffer, contentlen, (uint8_t*)SMS_MSG_CTRL_ON);
+	if (currPOS != NULL) 	{
+		if (checkSMSrequest(SMS_CMD_CTRL_ON)) return 2;
+		if ( !SMSaddData(SMS_CMD_CTRL_ON, contentbuffer, contentlen, phonenumb) ) return 0;
+		// Trigger cmd flag
+		triggerSMSrequest(SMS_CMD_CTRL_ON, FLAG_EN);
+		return 1;
+	}
+
+	currPOS = isWordinBuff(contentbuffer, contentlen, (uint8_t*)SMS_MSG_CTRL_OFF);
+	if (currPOS != NULL) 	{
+		if (checkSMSrequest(SMS_CMD_CTRL_OFF)) return 2;
+		if ( !SMSaddData(SMS_CMD_CTRL_OFF, contentbuffer, contentlen, phonenumb) )	return 0;
+		// Trigger cmd flag
+		triggerSMSrequest(SMS_CMD_CTRL_OFF, FLAG_EN);
+		return 1;
+	}
+
+	currPOS = isWordinBuff(contentbuffer, contentlen, (uint8_t*)SMS_MSG_CTRL_DEC);
+	if (currPOS != NULL) 	{
+		if (checkSMSrequest(SMS_CMD_CTRL_DEC)) return 2;
+		if ( !SMSaddData(SMS_CMD_CTRL_DEC, contentbuffer, contentlen, phonenumb) )	return 0;
+		// Trigger cmd flag
+		triggerSMSrequest(SMS_CMD_CTRL_DEC, FLAG_EN);
+		return 1;
+	}
+
+	currPOS = isWordinBuff(contentbuffer, contentlen, (uint8_t*)SMS_MSG_CTRL_INC);
+	if (currPOS != NULL) 	{
+		if (checkSMSrequest(SMS_CMD_CTRL_INC)) return 2;
+		SMSaddData(SMS_CMD_CTRL_INC, contentbuffer, contentlen, phonenumb);
+		// Trigger cmd flag
+		triggerSMSrequest(SMS_CMD_CTRL_INC, FLAG_EN);
+		return 1;
+	}
+
+	currPOS = isWordinBuff(contentbuffer, contentlen, (uint8_t*)SMS_MSG_CTRL_CALIB);
+	if (currPOS != NULL) 	{
+		if (checkSMSrequest(SMS_CMD_CTRL_CALIB)) return 2;
+		if ( !SMSaddData(SMS_CMD_CTRL_CALIB, contentbuffer, contentlen, phonenumb) )	return 0;
+		// Trigger cmd flag
+		triggerSMSrequest(SMS_CMD_CTRL_CALIB, FLAG_EN);
+		return 1;
+	}
+
+	currPOS = isWordinBuff(contentbuffer, contentlen, (uint8_t*)SMS_MSG_GET_STATUS);
+	if (currPOS != NULL) 	{
+		if (checkSMSrequest(SMS_CMD_GET_STATUS)) return 2;
+		if ( !SMSaddData(SMS_CMD_GET_STATUS, contentbuffer, contentlen, phonenumb) )	return 0;
+		// Trigger cmd flag
+		triggerSMSrequest(SMS_CMD_GET_STATUS, FLAG_EN);
+//		triggerSMSreturn(SMS_CMD_GET_STATUS, FLAG_EN);
+		return 1;
+	}
+
+	currPOS = isWordinBuff(contentbuffer, contentlen, (uint8_t*)SMS_MSG_GET_STATION);
+	if (currPOS != NULL) 	{
+		if (checkSMSrequest(SMS_CMD_GET_STATION)) return 2;
+		if ( !SMSaddData(SMS_CMD_GET_STATION, contentbuffer, contentlen, phonenumb) ) return 0;
+		// Trigger cmd flag
+		triggerSMSrequest(SMS_CMD_GET_STATION, FLAG_EN);
+//		triggerSMSreturn(SMS_CMD_GET_STATION, FLAG_EN);
+		return 1;
+	}
+
+	currPOS = isWordinBuff(contentbuffer, contentlen, (uint8_t*)SMS_MSG_GET_SENSOR);
+	if (currPOS != NULL) 	{
+		if (checkSMSrequest(SMS_CMD_GET_SENSOR)) return 2;
+		if ( !SMSaddData(SMS_CMD_GET_SENSOR, contentbuffer, contentlen, phonenumb) ) return 0;
+		// Trigger cmd flag
+		triggerSMSrequest(SMS_CMD_GET_SENSOR, FLAG_EN);
+//		triggerSMSreturn(SMS_CMD_GET_SENSOR, FLAG_EN);
+		return 1;
+	}
+	return 0;
+}
+
+uint8_t SMS_read()
+{
+	if ( SIM_sendCMD((uint8_t*)"AT+CMGL=\"REC UNREAD\"", (uint8_t*)"OK",ENABLE_SIM_CHECKRES,
+			ENABLE_MARKASREAD, 1000) != SIM_RES_MSG )	{
+		newSMS = 0;
+		return 0;
+	}
+	return 1;
+}
+
+uint8_t SMS_readAgain(uint8_t SMSindex)
+{
+	sprintf((char*)SIM_Txbuff, "AT+CMGR=%d",SMSindex);
+	if  ( SIM_sendCMD(SIM_Txbuff, (uint8_t*)"OK",ENABLE_SIM_CHECKRES,
+					  ENABLE_MARKASREAD, 1000) != SIM_RES_MSG)	{
+		newSMS = 0;
+		return 0;
+	}
+	return 1;
+}
+uint8_t processingSMS(void)
+{
+
+	if (!newSMS) return 0;
+
+	static uint8_t readagain = 0;
+	static uint16_t SMSindex = 0;
+
+	MarkAsReadData_SIM();
+	if ( readagain ) 	{
+		SMS_readAgain(SMSindex);
+	}
+	else 	{
+		SMS_read();
+	}
+	/* Processing SMS*/
+	//Get SMS index
+	SMSindex = SMS_getindex(SMS_Rxbuff, SMS_len);
+	if (!SMSindex)	{
+		newSMS = 0;
+		return 0;
+	}
+	//Get phone number
+	uint8_t phonenumb[PHONENUMB_LEN];
+	if ( !SMS_getPhonenumb(SMS_Rxbuff, SMS_len, phonenumb) ) {
+		newSMS = 0;
+		return 0;
+	}
+	//Get SMS content
+	uint8_t tmpSMSdatabuffer[SMS_len];
+	memset(tmpSMSdatabuffer, 0, SMS_len);
+	uint16_t contentlen = SMS_getContent(SMS_Rxbuff, SMS_len, tmpSMSdatabuffer);
+//	MQTT_publish((uint8_t*)TOPIC_PUB , tmpSMSdatabuffer, contentlen);
+	if ( !contentlen)	{
+		newSMS = 0;
+		return 0;
+	}
+	//Check SMS command
+	uint8_t checkres = SMS_checkCMD(tmpSMSdatabuffer, contentlen, phonenumb);
+	if ( !checkres ) 	{
+		newSMS = 0;
+		return 0;
+	}
+
+	if ( checkres == 2 )	{
+		readagain = 1;
+	}
+	else {
+		SIM_sendCMD((uint8_t*)"AT+CMGD=1,1", (uint8_t*)"OK",
+					ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 1000);
+		newSMS = 0;
+	}
 
 	return 1;
 }
@@ -322,6 +562,7 @@ uint8_t SIM_checkCMD (SIM_CMD_t cmd)
 			}
 			else {
 				Serial_log_string("SIM card not READY\r\n");
+
 			}
 			break;
 		case SIM_CMD_NW_CPSI:
@@ -360,28 +601,179 @@ uint8_t SIM_checkCMD (SIM_CMD_t cmd)
 	return res;
 }
 
+bool checkSMSrequest (SMS_CMD_t smsCMD)
+{
+	bool res = false;
+	switch (smsCMD)	{
+		case SMS_CMD_CTRL_ON:
+			res = __SIM->sms.CtrlON.requestflag ;
+			break;
+		case SMS_CMD_CTRL_OFF:
+			res = __SIM->sms.CtrlOFF.requestflag ;
+			break;
+		case SMS_CMD_CTRL_DEC:
+			res = __SIM->sms.CtrlDEC.requestflag ;
+			break;
+		case SMS_CMD_CTRL_INC:
+			res = __SIM->sms.CtrlINC.requestflag ;
+			break;
+		case SMS_CMD_CTRL_CALIB:
+			res = __SIM->sms.CtrlCALIB.requestflag ;
+			break;
+		case SMS_CMD_GET_STATUS:
+			res = __SIM->sms.GetStatus.requestflag ;
+			break;
+		case SMS_CMD_GET_STATION:
+			res = __SIM->sms.GetStation.requestflag ;
+			break;
+		case SMS_CMD_GET_SENSOR:
+			res = __SIM->sms.GetSensor.requestflag ;
+			break;
+		default:
+			break;
+	}
+	return res;
+}
+
+void triggerSMSrequest (SMS_CMD_t smsCMD, SMS_CMD_FLAG_t ENorDIS)
+{
+	switch (smsCMD)	{
+	case SMS_CMD_CTRL_ON:
+		__SIM->sms.CtrlON.requestflag = ENorDIS;
+		break;
+	case SMS_CMD_CTRL_OFF:
+		__SIM->sms.CtrlOFF.requestflag = ENorDIS;
+		break;
+	case SMS_CMD_CTRL_DEC:
+		__SIM->sms.CtrlDEC.requestflag = ENorDIS;
+		break;
+	case SMS_CMD_CTRL_INC:
+		__SIM->sms.CtrlINC.requestflag = ENorDIS;
+		break;
+	case SMS_CMD_CTRL_CALIB:
+		__SIM->sms.CtrlCALIB.requestflag = ENorDIS;
+		break;
+	case SMS_CMD_GET_STATUS:
+		__SIM->sms.GetStatus.requestflag = ENorDIS;
+		break;
+	case SMS_CMD_GET_STATION:
+		__SIM->sms.GetStation.requestflag = ENorDIS;
+		break;
+	case SMS_CMD_GET_SENSOR:
+		__SIM->sms.GetSensor.requestflag = ENorDIS;
+		break;
+	default:
+		break;
+	}
+}
+
+bool checkSMSreturn (SMS_CMD_t smsCMD)
+{
+	bool res = false;
+	switch (smsCMD)	{
+		case SMS_CMD_CTRL_ON:
+			res = __SIM->sms.CtrlON.returnflag ;
+			break;
+		case SMS_CMD_CTRL_OFF:
+			res = __SIM->sms.CtrlOFF.returnflag ;
+			break;
+		case SMS_CMD_CTRL_DEC:
+			res = __SIM->sms.CtrlDEC.returnflag ;
+			break;
+		case SMS_CMD_CTRL_INC:
+			res = __SIM->sms.CtrlINC.returnflag ;
+			break;
+		case SMS_CMD_CTRL_CALIB:
+			res = __SIM->sms.CtrlCALIB.returnflag ;
+			break;
+		case SMS_CMD_GET_STATUS:
+			res = __SIM->sms.GetStatus.returnflag ;
+			break;
+		case SMS_CMD_GET_STATION:
+			res = __SIM->sms.GetStation.returnflag ;
+			break;
+		case SMS_CMD_GET_SENSOR:
+			res = __SIM->sms.GetSensor.returnflag ;
+			break;
+		default:
+			break;
+		}
+	return res;
+}
+void triggerSMSreturn (SMS_CMD_t smsCMD, SMS_CMD_FLAG_t ENorDIS)
+{
+	switch (smsCMD)	{
+	case SMS_CMD_CTRL_ON:
+		__SIM->sms.CtrlON.returnflag = ENorDIS;
+		break;
+	case SMS_CMD_CTRL_OFF:
+		__SIM->sms.CtrlOFF.returnflag = ENorDIS;
+		break;
+	case SMS_CMD_CTRL_DEC:
+		__SIM->sms.CtrlDEC.returnflag = ENorDIS;
+		break;
+	case SMS_CMD_CTRL_INC:
+		__SIM->sms.CtrlINC.returnflag = ENorDIS;
+		break;
+	case SMS_CMD_CTRL_CALIB:
+		__SIM->sms.CtrlCALIB.returnflag = ENorDIS;
+		break;
+	case SMS_CMD_GET_STATUS:
+		__SIM->sms.GetStatus.returnflag = ENorDIS;
+		break;
+	case SMS_CMD_GET_STATION:
+		__SIM->sms.GetStation.returnflag = ENorDIS;
+		break;
+	case SMS_CMD_GET_SENSOR:
+		__SIM->sms.GetSensor.returnflag = ENorDIS;
+		break;
+	default:
+		break;
+	}
+}
+
+uint8_t SMS_config()
+{
+	if ( SIM_sendCMD((uint8_t*)"AT+CMGF=1", (uint8_t*)"OK", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, SIM_TIMEOUT_LONG) != SIM_RES_MSG ) return 0;
+
+	if ( SIM_sendCMD((uint8_t*)"AT+CSCS=\"GSM\"", (uint8_t*)"OK", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, SIM_TIMEOUT_LONG) != SIM_RES_MSG)		return 0;
+
+	return 1;
+}
+
+uint8_t SMS_sendMsg(uint8_t *Msg, uint16_t msglen, uint8_t *phonenumber )
+{
+	if ( !SMS_config() )	return 0;
+
+	sprintf((char*)SIM_Txbuff, "AT+CMGS=\"%s\"", phonenumber);
+	if ( SIM_sendCMD(SIM_Txbuff, (uint8_t*)">", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, SIM_TIMEOUT_LONG) != SIM_RES_MSG)	return 0;
+
+	Msg[msglen++] = 0x1A;
+	HAL_UART_Transmit(__SIM_UART, Msg, msglen, 0xFFFF);
+	if ( SIM_checkMsg((uint8_t*)"OK", SIM_TIMEOUT_LONG) != SIM_RES_MSG)	{
+		MarkAsReadData_SIM();
+		return 0;
+	}
+//	HAL_UART_Transmit(__SIM_UART, (uint8_t*), Size, Timeout)
+	MarkAsReadData_SIM();
+	return 1;
+}
+
 void SIM_checkOperation(void)
 {
-	SIM_sendCMD( (uint8_t*)"AT\r\n", (uint8_t*)"OK", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, SIM_TIMEOUT_LONG);
-	 HAL_Delay(500);
-//	SIM_checkCMD(SIM_CMD_SIMCARD_PIN);
-	SIM_checkCMD(SIM_CMD_NW_CREG);
+		 SIM_sendCMD((uint8_t*)"AT+CMGL=\"REC UNREAD\"", (uint8_t*)"OK",
+				 ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 1000);
 
-	//	Serial_log_string("send AT\r\n");
-//	Serial_log_string("respond AT: ");
-//	switch (rescode) {
-//		case SIM_NO_RES:
-//			Serial_log_string("SIM not respond AT\r\n");
-//			SIM_sendCMD( (uint8_t*)"AT+CRESET\r\n", (uint8_t*)"OK", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, SIM_TIMEOUT_LONG);
-//			break;
-//		case SIM_RES_MSG:
-//			Serial_log_string("SIM respond AT: OK\r\n");
-//			break;
-//		case SIM_ERROR:
-//			Serial_log_string("SIM ERROR\r\n");
-//			break;
-//		default:
-//			break;
-//	}
-//	SIM_checkNetworkavailable();
+
+}
+void testSMS(void)
+{
+	uint8_t msg[] = "hi hi hi";
+	SMS_sendMsg(msg, strlen((char*)msg), (uint8_t*)"84332560144");
+//	uint8_t SMSbuff[]= "CTRL+ON:10,2,50,18,100,23:47;";
+//	SMS_checkCMD(SMSbuff, strlen((char*)SMSbuff),(uint8_t*)"84332560144");
+//	Serial_log_number(__SIM->sms.CtrlON.requestflag);
+//	Serial_log_string(" ");
+//	Serial_log_buffer(__SIM->sms.CtrlON.data, __SIM->sms.CtrlON.datalength);
+//	Serial_log_string(" ");
 }

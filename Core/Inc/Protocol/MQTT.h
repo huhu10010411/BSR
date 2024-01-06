@@ -11,6 +11,9 @@
 #include "stm32f1xx.h"
 #include "SIM.h"
 
+#define TOPIC_PUB		"BSR/STATION2SERVER"
+#define TOPIC_SUB		"BSR/SERVER2STATION"
+
 #define MQTT_RECEIVE_TEST_MSG	(uint8_t*)"\r\n+CMQTTRXSTART: 0,7,5\r\n+CMQTTRXTOPIC: 0,7\r\nbsr\0est\r\n+CMQTTRXPAYLOAD: 0,5\r\nhe\0oo\r\n+CMQTTRXEND: 0\r\n"
 
 typedef enum {
@@ -23,7 +26,7 @@ void init_MQTT(SIM_t *SIM);
 uint8_t MQTT_connect();
 uint8_t MQTT_connected(void);
 uint8_t MQTT_disconnect ();
-uint8_t MQTT_publish(uint8_t *topic,uint8_t *msg,uint8_t msglen);
+uint8_t MQTT_publish(uint8_t *topic,uint8_t *msg,uint16_t msglen);
 uint8_t MQTT_subcribe (uint8_t *topic);
 uint8_t MQTT_unsubcribe (uint8_t *topic);
 uint8_t MQTT_receive(uint8_t *MQTTbuff,uint16_t size);

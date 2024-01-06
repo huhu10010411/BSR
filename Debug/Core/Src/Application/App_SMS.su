@@ -1,0 +1,3 @@
+../Core/Src/Application/App_SMS.c:15:6:initApp_SMS	16	static
+../Core/Src/Application/App_SMS.c:20:9:SMSreturn	24	static
+../Core/Src/Application/App_SMS.c:55:6:processApp_SMS	8	static

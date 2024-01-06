@@ -10,32 +10,32 @@
 
 #include "MQTT.h"
 #include "linkedlist.h"
+#include "main.h"
 
-/*
- * @Define Package type here
- */
-//#define PACKT_DATA      0xF1
-//#define PACKT_CMD		0xF2
-//#define PACKT_RESDATA	0xF3
-//#define PACKT_RESCALIB	0xF4
-//#define PACKT_REG		0xF5
 
-/*
- *  @Define Data type here
- */
-//#define DATAT_IN4		0x01
-//#define DATAT_NETWREADY	0x02
-//#define DATAT_STATUS	0x03
-//#define DATAT_REG		0x04
-/*
- * @Define Start/End of frame
- */
-#define MQTT_FRAME_SOF		0x7B
-#define MQTT_FRAME_EOF		0x7D
 
-#define TOPIC_PUB		"BSR/STATION2SERVER"
-#define TOPIC_SUB		"BSR/SERVER2STATION"
 
+#define BROADCAST_ID 	0xFF
+#define NODEID_POS		0
+#define PACKT_POS		1
+#define DATAT_POS		2
+#define CMD_POS			2
+#define DATA_POS		3
+#define RESSTATUS_POS	2
+#define DATAREST_POS	3
+#define ADDDATA_POS		3
+
+#define USER_MSG_HEADER_NUMBOF_ACT_STATION		(char*)"So luong station node dang hoat dong"
+#define USER_MSG_HEADER_NUMBOF_ACT_SENSOR		(char*)"So luong sensor node dang hoat dong"
+#define USER_MSG_HEADER_NUMBOF_FAIL_STATION		(char*)"So luong station node bi loi"
+#define USER_MSG_HEADER_NUMBOF_FAIL_SENSOR		(char*)"So luong sensor node bi loi"
+
+
+
+typedef enum {
+	RES_OK = 0x01,
+	RES_ERROR
+}RES_STATUS_t;
 typedef enum
 {
 	CMD_NONE,
@@ -55,10 +55,11 @@ typedef enum
 typedef enum
 {
 	PACKT_DATA= 0xF1,
-	PACKT_CMD ,
+	PACKT_CMD,
 	PACKT_RESDATA,
 	PACKT_RESCALIB,
-	PACKT_REGISTER
+	PACKT_REGISTER,
+	PACKT_RESREGISTER
 }PACK_t;
 
 typedef enum
@@ -69,7 +70,8 @@ typedef enum
 	DATA_STATUS,
 	DATA_REGISTER,
 	DATA_CALIB,
-	DATA_LATEST
+	DATA_LATEST,
+	DATA_AFTERCALIB
 }DATA_t;
 
 typedef enum {
@@ -90,10 +92,18 @@ typedef enum {
 	STEPM_MODE_DEFAULT
 }Stepmotor_change_mode_t;
 
-uint8_t Register2Server(uint8_t stationID, uint16_t stCurrent, uint16_t stVoltage, s_list *ssNodelist);
-uint8_t sendCMDtoServer( uint8_t stationID, CMD_t CMDtype, uint8_t *phone_numb,
-		uint16_t time_delay, uint8_t *StationorSensorIDbuff, MBA_state_t MBAstate,
+void initServerMsg (Station_t *Station, SMS_t *mySMS);
+
+void triggerCMD (CMD_t cmdType);
+
+uint8_t Register2Server(void);
+
+uint8_t sendCMDtoServer( CMD_t CMDtype,uint8_t *SMSdatabuffer, uint16_t datalen, MBA_state_t MBAstate,
 		Stepmotor_dir_t Stepm_DIR, Stepmotor_change_mode_t Stepm_changeMode,
 		uint8_t Stepm_changeValue );
-uint8_t sendData2Server(uint8_t stationID, uint16_t stCurrent, uint16_t stVoltage, s_list *ssNodelist, DATA_t dataType);
+uint8_t sendData2Server( DATA_t dataType);
+
+void processingComingMsg(uint8_t *Msg, uint16_t Msg_len, uint8_t stID);
+
+void testProcessingMsg(void);
 #endif /* INC_SERVERMESSAGE_H_ */

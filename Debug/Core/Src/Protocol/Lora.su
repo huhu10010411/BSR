@@ -1,0 +1,9 @@
+../Core/Src/Protocol/Lora.c:35:6:initLora	16	static
+../Core/Src/Protocol/Lora.c:42:6:initmyLora	16	static
+../Core/Src/Protocol/Lora.c:46:6:enableReceiveDMAtoIdle_LORA	8	static
+../Core/Src/Protocol/Lora.c:52:6:Lora_callback	24	static
+../Core/Src/Protocol/Lora.c:96:6:MarkAsReadData_LORA	4	static
+../Core/Src/Protocol/Lora.c:101:6:isIDExist	24	static
+../Core/Src/Protocol/Lora.c:111:6:Lora_receive	392	dynamic
+../Core/Src/Protocol/Lora.c:218:9:Lora_Setmode	24	static
+../Core/Src/Protocol/Lora.c:230:6:testLora_receive	24	static

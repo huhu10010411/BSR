@@ -8,6 +8,7 @@
 #include "Serial_log.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #define LOG_TIMEOUT		1000
 
@@ -21,7 +22,15 @@ void init_Serial_log (UART_HandleTypeDef *huart)
 void Serial_log_string(char *string)
 {
 	HAL_UART_Transmit(__SERIAL_LOG_UART, (uint8_t*)string, strlen(string), LOG_TIMEOUT);
+}
 
+void Serial_log_stringln(char *string)
+{
+	uint16_t stlen = strlen(string);
+	uint8_t *tmpbuff = (uint8_t*)malloc(stlen+2);
+	uint16_t len = sprintf( (char*)tmpbuff, "%s\n", string);
+	HAL_UART_Transmit(__SERIAL_LOG_UART, tmpbuff, len, LOG_TIMEOUT);
+	free(tmpbuff);
 }
 
 void Serial_log_buffer(uint8_t *buffer, uint16_t buffersize)

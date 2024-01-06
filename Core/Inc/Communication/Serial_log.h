@@ -12,6 +12,8 @@
 
 void init_Serial_log (UART_HandleTypeDef *huart);
 
+void Serial_log_stringln(char *string);
+
 void Serial_log_string(char *string);
 
 void Serial_log_buffer(uint8_t *buffer, uint16_t buffersize);

@@ -1,0 +1,2 @@
+../Core/Src/Application/App_MCU.c:20:6:initApp_MCU	16	static
+../Core/Src/Application/App_MCU.c:26:6:processApp_MCU	8	static

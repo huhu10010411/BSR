@@ -1,0 +1,8 @@
+../Core/Src/flash_storage.c:36:17:GetPage	24	static
+../Core/Src/flash_storage.c:53:6:float2Bytes	24	static
+../Core/Src/flash_storage.c:68:7:Bytes2float	32	static
+../Core/Src/flash_storage.c:83:10:Flash_Write_Data	56	static
+../Core/Src/flash_storage.c:134:6:Flash_Read_Data	24	static
+../Core/Src/flash_storage.c:145:6:Convert_To_Str	32	static
+../Core/Src/flash_storage.c:156:6:Flash_Write_NUM	16	static
+../Core/Src/flash_storage.c:165:7:Flash_Read_NUM	24	static

@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define SENSORNODE_T_INIT 	{0, 0, V_p, 0, SENSOR_ACTIVE}
+#define DATACALIB_SIZE 101
 
 typedef enum {
 	V_p = 0x01,
@@ -24,13 +24,25 @@ typedef enum {
 	SENSOR_DEACTIVE
 }sensor_state_t;
 
+typedef enum {
+	SLEEP,
+	WAKE,
+	MEASURE
+}sensor_mode_t;
+
 typedef struct{
 	uint8_t  	SSnode_ID;          // Sensor node ID
 	uint16_t    Battery;
 	voltage_t		V_type;				// Voltage type
 	uint16_t volatile V_value;			// Voltage value
 	sensor_state_t	Sensor_state;
+	uint8_t dataCalibAvailable;
+	uint8_t sentDatacalib;
+	sensor_mode_t sensorMode;
+	uint8_t dataCalibBuffer[DATACALIB_SIZE];
 }SensorNode_t;
+
+#define SENSORNODE_T_INIT 	{0, 0, V_p, 0, SENSOR_ACTIVE, 0, 0, SLEEP}
 
 typedef struct Node {
 	SensorNode_t  SSnode;

@@ -11,6 +11,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "Serial_log.h"
+#include "String_process.h"
 
 #define MQTT_TXBUFF_SIZE   1024
 
@@ -18,10 +19,12 @@ SIM_t *__MY_SIM;
 
 uint8_t MQTT_Txbuff [MQTT_TXBUFF_SIZE];
 
-uint16_t getRemainsize(uint8_t *Remainbuff, uint8_t *Originbuff, uint16_t originSize)
+
+void init_MQTT(SIM_t *SIM)
 {
-	return originSize-(Remainbuff - Originbuff)/sizeof(uint8_t);
+	__MY_SIM = SIM;
 }
+
 uint8_t SumofOccurances(uint8_t * word, uint8_t *buffer, uint16_t buffer_size)
 {
 	uint8_t sum =0;
@@ -36,29 +39,9 @@ uint8_t SumofOccurances(uint8_t * word, uint8_t *buffer, uint16_t buffer_size)
 	return sum;
 
 }
-uint8_t getBetween(uint8_t *firstWord,uint8_t *lastWord, uint8_t *buff, uint16_t size, uint8_t *getBuff)
-{
-	uint8_t fWlen = strlen((char*)firstWord);
 
-	uint8_t *Fp =isWordinBuff(buff, size, firstWord);
 
-	if (Fp == NULL ) return 0;
-	Fp += fWlen;
-	uint8_t remainSize = getRemainsize(Fp, buff, size);
-	uint8_t *Lp = isWordinBuff(Fp, remainSize, lastWord);
-	if (Lp == NULL || Fp >= Lp) return 0;
-
-	uint8_t getBuffindex =0;
-	while (Fp != Lp)
-	{
-		getBuff[getBuffindex++] = *Fp;
-		Fp ++;
-	}
-	getBuff[getBuffindex++]= '\0';
-	return getBuffindex;           // length of getBuff
-}
-
-uint8_t getContent(content_t contentType, uint8_t *databuffer, uint16_t datalen, uint8_t *getbuffer, uint16_t contentlen)
+static uint8_t getContent(content_t contentType, uint8_t *databuffer, uint16_t datalen, uint8_t *getbuffer, uint16_t contentlen)
 {
 	uint16_t gotcontent_len = 0;
 
@@ -106,9 +89,9 @@ uint8_t MQTT_receiveGetTopicandPayloadLength( uint8_t *MQTTbuff, uint16_t buffsi
 {
 	uint8_t topiclen_buff[10];
 	uint8_t payloadlen_buff[10];
-	Serial_log_string("MQTTbuffer: ");
-	Serial_log_buffer(MQTTbuff, buffsize);
-	Serial_log_string(" ");
+//	Serial_log_string("MQTTbuffer: ");
+//	Serial_log_buffer(MQTTbuff, buffsize);
+//	Serial_log_string(" ");
 	uint8_t * currentPos = isWordinBuff(MQTTbuff, buffsize, (uint8_t*)"+CMQTTRXSTART:");
 
 	uint16_t remainlen = getRemainsize(currentPos, MQTTbuff, buffsize);
@@ -154,10 +137,10 @@ uint8_t MQTT_connected(void)
 	if ( SIM_sendCMD((uint8_t*)"AT+CMQTTDISC?", (uint8_t*)"+CMQTTDISC: 0,0", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 2000) == SIM_RES_MSG )
 	{
 		__MY_SIM->mqttServer.connect = 1;
-		Serial_log_string("MQTT is connected to server\r\n");
+		Serial_log_string("MQTT is connected to broker\r\n");
 		return 1;
 	}
-	Serial_log_string("MQTT is disconnected to server\r\n");
+	Serial_log_string("MQTT is disconnected to broker\r\n");
 	__MY_SIM->mqttServer.connect = 0;
 	return 0;
 }
@@ -242,34 +225,39 @@ uint8_t sendConnectMessage() {
 	Serial_log_string("Connect to broker fail\r\n");
     return 0;
 }
-void init_MQTT(SIM_t *SIM)
-{
-	__MY_SIM = SIM;
-}
+
 
 uint8_t MQTT_checkNWavailable (void)
 {
 	if ( !SIM_checkCMD(SIM_CMD_SIMCARD_PIN) ) {
-
-		return 0;
+		static uint32_t tick = 0;
+		if (HAL_GetTick() - tick > 20000) {
+			tick = HAL_GetTick();
+			SIM_sendCMD( (uint8_t*)"AT+CRESET", (uint8_t*)"OK", ENABLE_SIM_CHECKRES,
+						ENABLE_MARKASREAD, SIM_TIMEOUT_LONG);
+			Serial_log_string("Reset Module\r\n");
+			HAL_Delay(5000);
+		}
+		return 1;
 	}
 
 	if ( !SIM_checkCMD(SIM_CMD_STA_CSQ) ) {
-		return 0;
+		return 2;
 	}
 
 	if ( !SIM_checkCMD(SIM_CMD_NW_CREG) ) {
-		return 0;
+		return 3;
 	}
 
 	if ( !SIM_checkCMD(SIM_CMD_NW_CPSI) ) {
-		return 0;
+		return 4;
 	}
-	return 1;
+	return 0;
 }
 uint8_t MQTT_connect()
 {
-	if ( !MQTT_checkNWavailable() )  return 0;
+
+	if ( MQTT_checkNWavailable() )  return 0;
 
 	if ( !startMQTT() )		return 0;
 
@@ -287,7 +275,10 @@ uint8_t MQTT_connect()
 	}
 	if ( !(configureMQTT()) )		return 0;
 
-	if ( !sendConnectMessage() )	return 0;
+	if ( !sendConnectMessage() )	{
+		HAL_Delay(500);
+		return 0;
+	}
 
 	__MY_SIM->mqttServer.connect = 1;
 	return 1;
@@ -307,11 +298,11 @@ uint8_t MQTT_disconnect ()
 	__MY_SIM->mqttServer.connect = 0;
 	return 1;
 }
-uint8_t MQTT_publish(uint8_t *topic, uint8_t *msg, uint8_t msglen)
+uint8_t MQTT_publish(uint8_t *topic, uint8_t *msg, uint16_t msglen)
 {
 	uint8_t check =0;
 	uint8_t topiclen= (uint8_t) strlen((char*)topic);
-	sprintf((char*)MQTT_Txbuff,"AT+CMQTTTOPIC=0,%d",topiclen);
+	sprintf((char*)MQTT_Txbuff,"AT+CMQTTTOPIC=0,%d", topiclen);
 
 	if (SIM_sendCMD(MQTT_Txbuff, (uint8_t*)'>', ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 2000)!= SIM_RES_MSG)	return 0;
 
@@ -348,14 +339,5 @@ uint8_t MQTT_subcribe (uint8_t *topic)
 void MQTT_testReceive (void)
 {
 
-//	MQTT_receive( MQTT_RECEIVE_TEST_MSG, 98 );
-	Serial_log_string("\r\nTopic len:");
-	Serial_log_number(__MY_SIM->mqttReceive.topicLen);
-	Serial_log_string("\r\nTopic:");
-	Serial_log_buffer(__MY_SIM->mqttReceive.topic, __MY_SIM->mqttReceive.topicLen);
 
-	Serial_log_string("\r\nPayload len:");
-	Serial_log_number(__MY_SIM->mqttReceive.payloadLen);
-	Serial_log_string("\r\nPayload:");
-	Serial_log_buffer(__MY_SIM->mqttReceive.payload, __MY_SIM->mqttReceive.payloadLen);
 }

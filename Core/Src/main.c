@@ -21,6 +21,7 @@
 #include "adc.h"
 #include "dma.h"
 #include "i2c.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -29,16 +30,23 @@
 
 #include "App_MQTT.h"
 #include <stdio.h>
-#include "SIM.h"
+//#include "SIM.h"
 #include "Serial_CFG.h"
-#include "MQTT.h"
-#include <stdlib.h>
-#include <time.h>
+//#include "MQTT.h"
+//#include <stdlib.h>
+//#include <time.h>
 #include "ds3231.h"
-#include "ServerMessage.h"
-#include "stationCMD.h"
+//#include "ServerMessage.h"
+//#include "stationCMD.h"
 #include "Serial_log.h"
-#include "crc32.h"
+//#include "crc32.h"
+#include "App_Serial.h"
+#include "flash_storage.h"
+#include "Lora.h"
+#include "Task.h"
+#include "App_MCU.h"
+#include "App_SMS.h"
+#include "user_lcd1604.h"
 
 
 /* USER CODE END Includes */
@@ -68,6 +76,7 @@
 SIM_t mySIM;
 SMS_t mySMS= {0};
 
+
 uint8_t isDataAvailable_CFG =0;
 uint32_t rxFlashdata;
 
@@ -80,22 +89,15 @@ _RTC myRTC ;
 
 uint8_t RTC_buffer[20];
 
+GPS_t myGPS;
 
+extern uint8_t alarmflag;
 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-void ReadIDfromFlash(uint8_t *myID);
-void WriteIDtoFlash(uint8_t *myID);
-
-
-
-
-
-
-
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -108,9 +110,35 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 	}
 	if (huart->Instance== __SCFG_UART->Instance)
 	{
-		isDataAvailable_CFG =1;
 		Serial_CFG_Callback(Size);
 	}
+
+	if (huart->Instance == __LORA_UART->Instance) {
+		Lora_callback(Size);
+	}
+}
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+	if (GPIO_Pin == RTC_ALARM_TRIGGER_Pin)	{
+		alarmflag = 0;
+		// turn OFF MBA
+		HAL_GPIO_TogglePin(MBA_CONTACTOR_GPIO_Port, MBA_CONTACTOR_Pin);
+		HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+		DS3231_ClearAlarm1();
+		// Change to Calib mode
+		setStationMode(STATION_MODE_CALIB);
+		triggerTaskflag(TASK_START_CALIB, FLAG_EN);
+	}
+}
+void setStationMode(Station_Mode_t mode)
+{
+	myStation.StMODE = mode;
+}
+
+Station_Mode_t checkStationMode()
+{
+	return myStation.StMODE;
 }
 /* USER CODE END 0 */
 
@@ -148,55 +176,83 @@ int main(void)
   MX_I2C1_Init();
   MX_ADC1_Init();
   MX_USART3_UART_Init();
+  MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
   SSnode_list =list_create();
-  SensorNode_t firstSensornode = {0x51, 0, V_p, 0, SENSOR_ACTIVE};
+  /* For Emulator only */
+  uint8_t Sensorcalibvalue1 [101];
+  for (uint8_t i =0 ; i < 100 ; i++)	{
+	  Sensorcalibvalue1[i] = rand() % 255 ;
+  }
+  SensorNode_t firstSensornode = {0x51, 0, V_p, 10, SENSOR_ACTIVE , 1 };
+  memcpy(firstSensornode.dataCalibBuffer, Sensorcalibvalue1, 100);
   list_append(SSnode_list, firstSensornode);
+
+  uint8_t Sensorcalibvalue2 [101];
+  for (uint8_t i =0 ; i < 100 ; i++)	{
+	  Sensorcalibvalue2[i] = rand() % 255 ;
+  }
+  SensorNode_t secondSensornode = {0x52, 0, V_p, 10, SENSOR_ACTIVE , 1};
+  memcpy(secondSensornode.dataCalibBuffer, Sensorcalibvalue2, 100);
+  list_append(SSnode_list, secondSensornode);
+  /**********************************************************************/
+
   myStation.ssNode_list = SSnode_list;
-//   ReadIDfromFlash(&myStation.stID);
 
-   mySIM.mqttServer.host = "tcp://broker.hivemq.com";
-   mySIM.mqttServer.port = 1883;
-   mySIM.mqttServer.willtopic = "unnormal_disconnect";
-   mySIM.mqttServer.willmsg = (uint8_t*)malloc(sizeof(myStation.stID));
-   sprintf((char*)mySIM.mqttServer.willmsg,"%d",myStation.stID);
-   mySIM.mqttClient.keepAliveInterval = 120;
-   mySIM.mqttClient.clientID = (char*)malloc(sizeof(myStation.stID));
-   sprintf((char*)mySIM.mqttClient.clientID,"%d",myStation.stID);
-   mySIM.mqttReceive.qos =1;
-   mySIM.mqttServer.connect=0;
+  // Get station ID from flash
+  myStation.stID = (uint8_t)Flash_Read_NUM(FLASH_PAGE_127);
 
-//  initSerial_CFG(&huart2,&hdma_usart2_rx);
-  initSIM(&huart1, &hdma_usart1_rx, &mySIM);
+	mySIM.mqttServer.host = "tcp://broker.hivemq.com";
+	mySIM.mqttServer.port = 1883;
+	mySIM.mqttServer.willtopic = "unnormal_disconnect";
+	mySIM.mqttServer.willmsg = (uint8_t*)malloc(sizeof(myStation.stID));
+	sprintf((char*)mySIM.mqttServer.willmsg,"%d",myStation.stID);
+	mySIM.mqttClient.keepAliveInterval = 10;
+	mySIM.mqttClient.clientID = (char*)malloc(sizeof(myStation.stID));
+	sprintf((char*)mySIM.mqttClient.clientID,"%d",myStation.stID);
+	mySIM.mqttReceive.qos =1;
+	mySIM.mqttServer.connect=0;
 
-  // Init Serial log
-  init_Serial_log(&huart2);
+	mySIM.sms = mySMS;
 
-  // Init MQTT app
-  initApp_MQTT();
+	initTask(&myStation);
+	// Lora
+	initLora(&huart3, &hdma_usart3_rx);
 
-  // Init RTC module (DS3231)
-  DS3231_Init(&hi2c1);
+	initmyLora(&myStation);
+	// GPS
+	myGPS.getFlag = 0;
+	initGPS(&myStation, &myRTC);
 
-//  myRTC.Year = 23;
-//  myRTC.Month = 12;
-//  myRTC.Date = 17;
-//  myRTC.Hour = 15;
-//  myRTC.Min = 21;
-//  myRTC.Sec = 0;
-//  DS3231_SetTime(&myRTC);
+	initSIM(&huart1, &hdma_usart1_rx, &mySIM);
 
-  uint8_t crcbuffer [10];
-  crcbuffer[0] = 0xF1;
-  crcbuffer[1] = 0x12;
-  crcbuffer[2] = 0x02;
-  crcbuffer[3] = 0x8A;
-  crcbuffer[4] = 0x32;
-  crcbuffer[5] = 0x47;
-  crcbuffer[6] = 0x2F;
-  crcbuffer[7] = 0x54;
-  crcbuffer[8] = 0x8F;
-  crcbuffer[9] = 0x05;
+	// Init Serial log
+	init_Serial_log(&huart2);
+
+	// Init MQTT app
+	initApp_MQTT(&myStation, &mySIM);
+
+	initApp_MCU(&myStation, &mySIM);
+
+	initApp_SMS(&mySIM.sms);
+
+	init_App_Serial(&myStation);
+
+	// Init RTC module (DS3231)
+	DS3231_Init(&hi2c1);
+
+	LCD_Init();
+
+
+
+//	myRTC.Year = 24;
+//	myRTC.Month = 1;
+//	myRTC.Date = 1;
+//	myRTC.Hour = 15;
+//	myRTC.Min = 17;
+//	myRTC.Sec = 0;
+//	DS3231_SetTime(&myRTC);
+
 
   /* USER CODE END 2 */
 
@@ -207,60 +263,30 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-
-//	  if( isDataAvailable_CFG)
-//	  {
-//		  isDataAvailable_CFG =0;
-//		  processing_CMD(&myStation.stID);
-//		  MarkAsReadData_CFG();
-//		  WriteIDtoFlash(&myStation.stID);
-//	  }
-//	   if (mySIM.mqttServer.connect)
-//	   {
-//		   HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-//		  if (! MQTT_publish((uint8_t*)"testbsr", (uint8_t*)"hellobsr", 8))
-//		  {
-//			  mySIM.mqttServer.connect=0;
-//			  MQTT_connect(&mySIM);
-//		  }
-//		  Register2Server(myStation);
-//	   }
-//	   else
-//	   {
-//		   MQTT_connect(&mySIM);
-//	   }
-
-//	   if (newSMS)
-//	   {
-//		   newSMS = 0;
-//		   if (processingSMS(&mySMS))
-//		   {
-//			   if (mySMS.cmd != SMS_NO_CMD)
-//			   {
-//				   if (!mySIM.mqttServer.connect)
-//				   {
-//					   MQTT_connect(&mySIM);
-//				   }
-//
-////				   sendCMDtoServer(mySMS.cmd);
-//			   }
-//
-//		   }
-//	   }
+//	  testLora_receive();
+//	  testProcessingMsg();
 //	  Serial_log_testOperation();
 //	  SIM_checkOperation();
 //	  MQTT_testReceive();
-
-//		0x3F67D17C
-//	 if ( DS3231_GetTime(&myRTC) ) {
-//		 Serial_log_string("get RTC success\r\n");
-//	 }
-//	  uint8_t len = sprintf( (char*)RTC_buffer, "%d/%d/%d %d:%d:%d\r\n",
-//			  myRTC.Date, myRTC.Month, myRTC.Year, myRTC.Hour, myRTC.Min, myRTC.Sec);
-//	  Serial_log_buffer(RTC_buffer, len);
+//	  processApp_MCU();
 //	  processApp_MQTT();
-	  HAL_Delay(5000);
-
+//	  processApp_SMS();
+//	  LCD_PrintNumber(5);
+//	  processing_CMD(&myStation.stID);
+	  testSynchronize();
+//	  DS3231_GetTime(&myRTC);
+//	  sprintf((char*)RTC_buffer,"%d/%d/%d", myRTC.Date, myRTC.Month, myRTC.Year);
+////	  LCD_Clear();
+//	  LCD_GotoXY(3, 1);
+//	  LCD_PrintNumber(3);
+//	  LCD_Print((char*)RTC_buffer);
+//	  sprintf((char*)RTC_buffer,"%d:%d:%d", myRTC.Hour, myRTC.Min, myRTC.Sec);
+//	  LCD_GotoXY(3, 2);
+//	  LCD_Print((char*)RTC_buffer);
+//	  testSMS();
+//	  myStation.getGPStimeflag = 1;
+//	  HAL_GPIO_TogglePin(MBA_CONTACTOR_GPIO_Port, MBA_CONTACTOR_Pin);
+	  HAL_Delay(200);
   }
   /* USER CODE END 3 */
 }
@@ -312,23 +338,6 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-
-void WriteIDtoFlash(uint8_t *myID)
-{
-	uint32_t tmp =0;
-	tmp |= *myID;
-	Flash_Write_Data(FLASH_ID_ADDR,&tmp,1);
-}
-void ReadIDfromFlash(uint8_t *myID)
-{
-	uint32_t tmp;
-	uint8_t tmp2;
-	Flash_Read_Data(FLASH_ID_ADDR, &tmp, 1);
-	tmp2 =(uint8_t)(tmp & 0xFF);
-	*myID = tmp2;
-}
-
-
 
 /* USER CODE END 4 */
 

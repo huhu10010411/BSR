@@ -30,9 +30,11 @@ Core/Src/Application/App_MCU.o: ../Core/Src/Application/App_MCU.c \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h \
  ../Core/Inc/main.h ../Core/Inc/linkedlist.h \
  D:/blue_pill_pj/Station/Core/Inc/Device/SIM.h \
- D:/blue_pill_pj/Station/Core/Inc/Device/ds3231.h \
+ D:/blue_pill_pj/Station/Core/Inc/Device/Contactor.h \
+ D:/blue_pill_pj/Station/Core/Inc/Device/ds3231.h ../Core/Inc/i2c.h \
+ ../Core/Inc/main.h \
  D:/blue_pill_pj/Station/Core/Inc/Communication/Serial_CFG.h \
- ../Core/Inc/Task.h ../Core/Inc/main.h
+ ../Core/Inc/Task.h
 D:/blue_pill_pj/Station/Core/Inc/Application/App_MCU.h:
 ../Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f1xx.h:
 ../Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f103xb.h:
@@ -65,7 +67,9 @@ D:/blue_pill_pj/Station/Core/Inc/Application/App_MCU.h:
 ../Core/Inc/main.h:
 ../Core/Inc/linkedlist.h:
 D:/blue_pill_pj/Station/Core/Inc/Device/SIM.h:
+D:/blue_pill_pj/Station/Core/Inc/Device/Contactor.h:
 D:/blue_pill_pj/Station/Core/Inc/Device/ds3231.h:
+../Core/Inc/i2c.h:
+../Core/Inc/main.h:
 D:/blue_pill_pj/Station/Core/Inc/Communication/Serial_CFG.h:
 ../Core/Inc/Task.h:
-../Core/Inc/main.h:

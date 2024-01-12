@@ -46,7 +46,7 @@
 
 #define PHONENUMB_LEN		12
 
-extern UART_HandleTypeDef *__SIM_UART;
+//extern UART_HandleTypeDef *__SIM_UART;
 //extern DMA_HandleTypeDef  *__SIM_DMA_UART;
 extern uint8_t MQTT_Rxbuff [MQTT_RXBUFF_SIZE];
 

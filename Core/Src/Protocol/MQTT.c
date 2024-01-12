@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include "Serial_log.h"
 #include "String_process.h"
+#include "usart.h"
 
 #define MQTT_TXBUFF_SIZE   1024
 
@@ -312,7 +313,7 @@ uint8_t MQTT_publish(uint8_t *topic, uint8_t *msg, uint16_t msglen)
 
 	if (SIM_sendCMD(MQTT_Txbuff, (uint8_t*)'>', ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 2000)!= SIM_RES_MSG)	return 0;
 
-	HAL_UART_Transmit(__SIM_UART, msg, msglen, 0xFFFF);
+	HAL_UART_Transmit(&huart1, msg, msglen, 0xFFFF);
 	check = SIM_checkMsg((uint8_t*)"OK", 2000);
 	MarkAsReadData_SIM();
 	if (check != SIM_RES_MSG)	return 0;

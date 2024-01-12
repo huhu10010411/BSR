@@ -12,3 +12,4 @@
 ../Core/Src/Device/ds3231.c:197:6:WriteRegister	32	static
 ../Core/Src/Device/ds3231.c:205:16:B2D	16	static
 ../Core/Src/Device/ds3231.c:210:16:D2B	16	static
+../Core/Src/Device/ds3231.c:215:10:getCountdowntime	24	static

@@ -18,6 +18,7 @@
 #include "Validation.h"
 
 
+
 #define PACKBUFF_MAXLEN		1024
 #define DATABUFF_MAXLEN		1024
 uint8_t Pack_buff [PACKBUFF_MAXLEN];
@@ -87,7 +88,6 @@ uint8_t createPack(PACK_t PackType, DATA_t DataType, CMD_t CMDType )
 	{
 		Pack_buff[pack_len++] = CMDType;
 	}
-	else return 0;
 	return pack_len;
 }
 
@@ -165,6 +165,11 @@ uint8_t Serialize_Stationdata( uint8_t *Buffer, DATA_t dataType)
 		case DATA_AFTERCALIB:
 			Buffer[buff_len++] = (uint8_t)( ( __MY_STATION->stCurrent >> 8 ) & 0xFF);
 			Buffer[buff_len++] = (uint8_t)( __MY_STATION->stCurrent & 0xFF );
+			break;
+		case DATA_MBA_STATE:
+			Buffer[buff_len++] = (uint8_t) (__MY_STATION->MBAstate);
+		case DATA_STEP_REACH_LIMIT:
+			Buffer[buff_len++] = (uint8_t)getLimit();
 			break;
 		default:
 			break;
@@ -303,6 +308,29 @@ uint8_t sendData2Server( DATA_t dataType)
 	return 1;
 }
 
+uint8_t sendRespond(CMD_t cmdType, RES_STATUS_t resStatus)
+{
+	uint16_t packlen = 0;
+	memset(Pack_buff, 0, PACKBUFF_MAXLEN);
+	packlen += createPack(PACKT_RESCMD, DATA_NONE, CMD_NONE);
+	Pack_buff[packlen++] = resStatus;
+	Pack_buff[packlen++] = cmdType;
+	switch (cmdType)	{
+	case CMD_CTRL_MBA:
+		Pack_buff[packlen++] = __MY_STATION->MBAstate;
+		break;
+	case CMD_CTRL_STEP_MOTOR:
+		twobyte2buff(Pack_buff + packlen, __MY_STATION->stepPosition);
+		packlen+= 2;
+		break;
+	default:
+		break;
+	}
+	packlen += addCRCtoPack(Pack_buff, packlen);
+
+	if ( !MQTT_publish( (uint8_t*)TOPIC_PUB, Pack_buff, packlen) ) return 0;
+	return 1;
+}
 uint8_t checkCRC(uint8_t *buffer, uint16_t bufferlen)
 {
 	if ( buffer2num(buffer + bufferlen - 4) != crc32( (char*)buffer, bufferlen - 4) ) return 0;
@@ -328,10 +356,15 @@ DATA_t checkDataREStype(uint8_t *Msg)
 {
 	return Msg[DATAREST_POS];
 }
+CMD_t checkCmdREStype( uint8_t *Msg)
+{
+	return Msg[CMDREST_POS];
+}
 CMD_t checkCMDtype (uint8_t *Msg)
 {
 	return Msg[CMD_POS];
 }
+
 
 void getDataStatus(uint8_t *Msg, uint16_t Msglen)
 {
@@ -400,6 +433,23 @@ ID_t getDatalatest(uint8_t *Msg, uint16_t Msg_len)
 		break;
 	}
 	return IDtype;
+}
+
+MBA_state_t getMBAstate(uint8_t *Msg)
+{
+	MBA_state_t res = MBA_NULL;
+	switch (Msg[MBA_STATE_POS])		{
+	case MBA_OFF:
+		res = MBA_OFF;
+		break;
+	case MBA_ON:
+		res = MBA_ON;
+		break;
+	default:
+		break;
+	}
+	__MY_STATION->MBAstate = res;
+	return res;
 }
 void markassentDatacalibsuccess(void)
 {
@@ -471,13 +521,18 @@ void processingComingMsg(uint8_t *Msg, uint16_t Msg_len, uint8_t stID)
 					 calibtime = buff2Fourbyte( Msg+ (uint8_t)ADDDATA_POS );
 					_RTC tmpRTC;
 					epochtine2RTC(calibtime, &tmpRTC);
+					// Save Calib time
+					__MY_STATION->calibTime.hour = tmpRTC.Hour;
+					__MY_STATION->calibTime.min = tmpRTC.Min;
+					__MY_STATION->calibTime.sec = tmpRTC.Sec;
+					// Set alarm for Calib
 					DS3231_ClearAlarm1();
 					DS3231_SetAlarm1(ALARM_MODE_ALL_MATCHED, tmpRTC.Date, tmpRTC.Hour, tmpRTC.Min, tmpRTC.Sec);
 
 					break;
 				case CMD_CTRL_MBA:
-					//Get MBA state from package
-					triggerTaskflag(TASK_CTRL_MBA, FLAG_EN);
+					//Get MBA state from package and switch contactor
+					switchContactor(getMBAstate(Msg));
 					break;
 				case CMD_CTRL_STEP_MOTOR:
 					//Get data to control step motor
@@ -511,6 +566,23 @@ void processingComingMsg(uint8_t *Msg, uint16_t Msg_len, uint8_t stID)
 				if ( Msg[RESSTATUS_POS] == RES_OK)	{
 					triggerTaskflag(TASK_SEND_DATAAFTERCALIB, FLAG_DIS);
 					setStationMode(STATION_MODE_NORMAL);
+				}
+				break;
+			default:
+				break;
+			}
+			break;
+		case PACKT_RESCMD:
+			cmdType = checkCMDtype(Msg);
+			switch (cmdType)	{
+			case CMD_CTRL_MBA:
+				if (Msg[RESSTATUS_POS] == RES_OK)	{
+
+				}
+				break;
+			case CMD_CTRL_STEP_MOTOR:
+				if (Msg[RESSTATUS_POS] == RES_OK)	{
+
 				}
 				break;
 			default:

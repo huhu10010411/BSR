@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <time.h>
+#include "i2c.h"
 
 #define DS3231_REG_TIME         0x00
 #define DS3231_REG_ALARM1       0x07
@@ -75,6 +76,7 @@ bool DS3231_SetAlarm1(AlarmMode mode, uint8_t date, uint8_t hour, uint8_t min, u
 bool DS3231_ClearAlarm1();
 bool ReadRegister(uint8_t regAddr, uint8_t *value);
 bool WriteRegister(uint8_t regAddr, uint8_t value);
+uint16_t getCountdowntime(uint8_t hour, uint8_t min, uint8_t sec);
 
 
 

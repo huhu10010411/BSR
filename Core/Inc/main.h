@@ -33,6 +33,7 @@ extern "C" {
 /* USER CODE BEGIN Includes */
 #include "linkedlist.h"
 #include "SIM.h"
+#include "Contactor.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -45,6 +46,12 @@ typedef enum {
 }Station_Mode_t;
 
 
+
+typedef struct {
+	uint8_t hour;
+	uint8_t min;
+	uint8_t sec;
+}Calibtime_t;
 
 typedef struct {
 	uint8_t register2server : 1;
@@ -68,23 +75,25 @@ typedef struct {
 
 #define TASK_FLAG_INIT	{1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 
+
 typedef struct {
 	Station_Mode_t StMODE ;
 	uint8_t stID;
 	uint16_t stCurrent;
 	uint16_t stVoltage;
+	MBA_state_t MBAstate;
+	uint16_t stepPosition;
 	s_list  * ssNode_list;
 	Task_handle_t task;
+	Calibtime_t calibTime;
 }Station_t;
 
-//extern Station_t myStation;
-//extern SIM_t mySIM;
-//extern s_list* SSnode_list;
+
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
-#define STATION_T_INIT	{STATION_MODE_NORMAL, 8, 300, 20, NULL, TASK_FLAG_INIT}
+#define STATION_T_INIT	{STATION_MODE_NORMAL, 8, 300, 0, MBA_ON, 0, NULL, TASK_FLAG_INIT}
 
 #define ACTIVE		0x01
 #define DEACTIVE	0x02
@@ -120,20 +129,35 @@ Station_Mode_t checkStationMode();
 #define RTC_ALARM_TRIGGER_Pin GPIO_PIN_0
 #define RTC_ALARM_TRIGGER_GPIO_Port GPIOA
 #define RTC_ALARM_TRIGGER_EXTI_IRQn EXTI0_IRQn
-#define MOTOR_SENSE2_Pin GPIO_PIN_1
-#define MOTOR_SENSE2_GPIO_Port GPIOA
 #define MBA_CONTACTOR_Pin GPIO_PIN_4
 #define MBA_CONTACTOR_GPIO_Port GPIOA
+#define LIMIT_SWITCH_MAX_Pin GPIO_PIN_5
+#define LIMIT_SWITCH_MAX_GPIO_Port GPIOA
+#define LIMIT_SWITCH_MAX_EXTI_IRQn EXTI9_5_IRQn
 #define MOTOR_DIR_Pin GPIO_PIN_7
 #define MOTOR_DIR_GPIO_Port GPIOA
 #define MOTOR_STEP_Pin GPIO_PIN_0
 #define MOTOR_STEP_GPIO_Port GPIOB
 #define MOTOR_SLEEP_Pin GPIO_PIN_1
 #define MOTOR_SLEEP_GPIO_Port GPIOB
+#define LIMIT_SWITCH_MIN_Pin GPIO_PIN_2
+#define LIMIT_SWITCH_MIN_GPIO_Port GPIOB
 #define MOTOR_RST_Pin GPIO_PIN_12
 #define MOTOR_RST_GPIO_Port GPIOB
 #define MOTOR_EN_Pin GPIO_PIN_13
 #define MOTOR_EN_GPIO_Port GPIOB
+#define BUTTON_MENU_Pin GPIO_PIN_14
+#define BUTTON_MENU_GPIO_Port GPIOB
+#define BUTTON_MENU_EXTI_IRQn EXTI15_10_IRQn
+#define BUTTON_OK_Pin GPIO_PIN_15
+#define BUTTON_OK_GPIO_Port GPIOB
+#define BUTTON_OK_EXTI_IRQn EXTI15_10_IRQn
+#define BUTTON_DOWN_Pin GPIO_PIN_8
+#define BUTTON_DOWN_GPIO_Port GPIOA
+#define BUTTON_DOWN_EXTI_IRQn EXTI9_5_IRQn
+#define BUTTON_UP_Pin GPIO_PIN_9
+#define BUTTON_UP_GPIO_Port GPIOA
+#define BUTTON_UP_EXTI_IRQn EXTI9_5_IRQn
 #define LED_Pin GPIO_PIN_10
 #define LED_GPIO_Port GPIOA
 #define LCD_RS_Pin GPIO_PIN_11

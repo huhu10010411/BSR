@@ -23,12 +23,13 @@
 UART_HandleTypeDef *__LORA_UART;
 DMA_HandleTypeDef *__LORA_DMA_UART;
 
+
 static Station_t *__MY_STATION;
 
 uint8_t LoraRxbuff[LORARXBUFF_MAXLEN];
 uint8_t Lorabuff[LORABUFF_MAXLEN];
 uint8_t LoraTxbuff[LORATXBUFF_MAXLEN];
-static uint16_t oldPos = 0, newPos = 0;
+//static uint16_t oldPos = 0, newPos = 0;
 static uint16_t head = 0, tail = 0;
 uint8_t isOK = 0;
 
@@ -36,14 +37,15 @@ void initLora(UART_HandleTypeDef *huart, DMA_HandleTypeDef *hdma)
 {
 	__LORA_UART = huart;
 	__LORA_DMA_UART = hdma;
-	enableReceiveDMAtoIdle_LORA();
+	enableReceiveDMAtoIdle_Lora();
 }
 
-void initmyLora(Station_t *myStation)
+void initmyLora(UART_HandleTypeDef *huart, DMA_HandleTypeDef *hdma, Station_t *myStation)
 {
+	initLora(huart, hdma);
 	__MY_STATION = myStation;
 }
-void enableReceiveDMAtoIdle_LORA(void)
+void enableReceiveDMAtoIdle_Lora(void)
 {
 	  HAL_UARTEx_ReceiveToIdle_DMA(__LORA_UART, LoraRxbuff, LORARXBUFF_MAXLEN);
 	  __HAL_DMA_DISABLE_IT(__LORA_DMA_UART,DMA_IT_HT);
@@ -51,45 +53,49 @@ void enableReceiveDMAtoIdle_LORA(void)
 
 void Lora_callback(uint16_t Size)
 {
-	oldPos = newPos;  // Update the last position before copying new data
+
+//	oldPos = newPos;  // Update the last position before copying new data
 
 	/* If the data in large and it is about to exceed the buffer size, we have to route it to the start of the buffer
 	 * This is to maintain the circular buffer
 	 * The old data in the main buffer will be overlapped
 	 */
-	if (oldPos+Size > LORABUFF_MAXLEN)  // If the current position + new data size is greater than the main buffer
-	{
-		uint16_t datatocopy = LORABUFF_MAXLEN-oldPos;  // find out how much space is left in the main buffer
-		memcpy ((uint8_t *)Lorabuff+oldPos, (uint8_t *)LoraRxbuff, datatocopy);  // copy data in that remaining space
-
-		oldPos = 0;  // point to the start of the buffer
-		memcpy ((uint8_t *)Lorabuff, (uint8_t *)LoraRxbuff+datatocopy, (Size-datatocopy));  // copy the remaining data
-		newPos = (Size-datatocopy);  // update the position
-	}
+//	if (oldPos+Size > LORABUFF_MAXLEN)  // If the current position + new data size is greater than the main buffer
+//	{
+//		uint16_t datatocopy = LORABUFF_MAXLEN-oldPos;  // find out how much space is left in the main buffer
+//		memcpy ((uint8_t *)Lorabuff+oldPos, (uint8_t *)LoraRxbuff, datatocopy);  // copy data in that remaining space
+//
+//		oldPos = 0;  // point to the start of the buffer
+//		memcpy ((uint8_t *)Lorabuff, (uint8_t *)LoraRxbuff+datatocopy, (Size-datatocopy));  // copy the remaining data
+//		newPos = (Size-datatocopy);  // update the position
+//	}
 
 	/* if the current position + new data size is less than the main buffer
-	 * we will simply copy the data into the buffer and update the position
+	 * we will Loraply copy the data into the buffer and update the position
 	 */
-	else
-	{
-		memcpy ((uint8_t *)Lorabuff+oldPos, (uint8_t *)LoraRxbuff, Size);
-		newPos = Size+oldPos;
-	}
+//	else
+//	{
+		memcpy ((uint8_t *)Lorabuff, (uint8_t *)LoraRxbuff, Size);
+//		newPos = Size+oldPos;
+//	}
 
 	/* Update the position of the Head
 	 * If the current position + new size is less then the buffer size, Head will update normally
 	 * Or else the head will be at the new position from the beginning
 	 */
-	if (head + Size < LORABUFF_MAXLEN ) head = head + Size;
-	else head = head + Size - LORABUFF_MAXLEN;
+//	if (head + Size < LORABUFF_MAXLEN ) head = head + Size;
+//	else head = head + Size - LORABUFF_MAXLEN;
 
+//	memset(LoraRxbuff, 0, LORARXBUFF_MAXLEN);
 	/* start the DMA again */
-	enableReceiveDMAtoIdle_LORA();
+	enableReceiveDMAtoIdle_Lora();
+
 
 	//Processing data
-	if (isWordinBuff(LoraRxbuff, Size, (uint8_t*)"OK")) {
+	if (isWordinBuff(Lorabuff, Size, (uint8_t*)"OK")) {
 		isOK = 1;
 	}
+	Lora_receive(Lorabuff, Size);
 
 }
 
@@ -113,7 +119,8 @@ void Lora_receive(uint8_t *Msg, uint8_t msglen)
 	if (Msg[START_POS] != START_VALUE)	return ;
 	uint8_t id_len = Msg[ID_LENGTH_POS] - 1;
 	// Get sensor ID
-	uint8_t tmpidbuff[id_len+1];
+	uint8_t tmpidbuff[id_len+1] ;
+	memset(tmpidbuff, 0, id_len+1);
 	memcpy(tmpidbuff, Msg +ID_STARTPOS, id_len);
 	uint8_t id = atoi((char*)tmpidbuff);
 	if ( !sensorID_validation(id) )	return;

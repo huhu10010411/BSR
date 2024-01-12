@@ -211,3 +211,13 @@ static uint8_t D2B(uint8_t decimal)
 {
   return (((decimal / 10) << 4) | (decimal % 10));
 }
+
+uint16_t getCountdowntime(uint8_t hour, uint8_t min, uint8_t sec)
+{
+	_RTC curRTC;
+	if (!DS3231_GetTime(&curRTC))	return 0;
+	if ( hour < curRTC.Hour || hour - curRTC.Hour > 18 )	return 0;
+	if ( hour == curRTC.Hour && min < curRTC.Min ) return 0;
+	if ( hour == curRTC.Hour && min == curRTC.Min && sec < curRTC.Sec )	return 0;
+	return (hour- curRTC.Hour)*3600 + (min - curRTC.Min)*60 + (sec - curRTC.Sec);
+}

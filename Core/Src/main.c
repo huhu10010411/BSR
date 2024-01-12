@@ -41,12 +41,18 @@
 #include "Serial_log.h"
 //#include "crc32.h"
 #include "App_Serial.h"
+
 #include "flash_storage.h"
 #include "Lora.h"
 #include "Task.h"
 #include "App_MCU.h"
 #include "App_SMS.h"
 #include "user_lcd1604.h"
+#include "button.h"
+#include "Contactor.h"
+
+#include "App_Display.h"
+#include "App_MBA_stepmor.h"
 
 
 /* USER CODE END Includes */
@@ -91,7 +97,13 @@ uint8_t RTC_buffer[20];
 
 GPS_t myGPS;
 
+DISPLAY_MODE_t myDisplayMode = HOME;
+
 extern uint8_t alarmflag;
+
+uint32_t volatile  tmpadc= 0;
+uint16_t volatile  adccount = 0;
+uint8_t debug = 0;
 
 /* USER CODE END PV */
 
@@ -102,9 +114,10 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+static void currentConvert(uint32_t volatile *adcval);
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 {
-	if (huart->Instance == __SIM_UART->Instance )
+	if (huart->Instance == USART1 )
 	{
 		SIM_callback(Size);
 	}
@@ -121,14 +134,53 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	if (GPIO_Pin == RTC_ALARM_TRIGGER_Pin)	{
-		alarmflag = 0;
+//		alarmflag = 0;
 		// turn OFF MBA
-		HAL_GPIO_TogglePin(MBA_CONTACTOR_GPIO_Port, MBA_CONTACTOR_Pin);
-		HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+		myStation.MBAstate = switchContactor(MBA_OFF);
+//		HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
 		DS3231_ClearAlarm1();
 		// Change to Calib mode
 		setStationMode(STATION_MODE_CALIB);
 		triggerTaskflag(TASK_START_CALIB, FLAG_EN);
+	}
+	if (GPIO_Pin == BUTTON_MENU_Pin) {
+		// Button Menu handler
+		buttonMENU_handler();
+	}
+
+	if (GPIO_Pin == BUTTON_OK_Pin) {
+		// Button OK handler
+		buttonOK_handler();
+	}
+
+	if (GPIO_Pin == BUTTON_UP_Pin) {
+		// Button UP handler
+		buttonUP_handler();
+	}
+
+	if (GPIO_Pin == BUTTON_DOWN_Pin) {
+		// Button DOWN handler
+		buttonDOWN_handler();
+	}
+
+	if (GPIO_Pin == LIMIT_SWITCH_MAX_Pin) {
+		// Button Limit MAX handler
+		SW_LIMIT_MAX_handler();
+	}
+
+	if (GPIO_Pin == LIMIT_SWITCH_MIN_Pin) {
+		// Button Limit MIN handler
+		SW_LIMIT_MIN_handler();
+	}
+
+}
+
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
+{
+	if (hadc->Instance == hadc1.Instance)	{
+		tmpadc += HAL_ADC_GetValue(hadc);
+		adccount++;
+		currentConvert(&tmpadc);
 	}
 }
 void setStationMode(Station_Mode_t mode)
@@ -174,9 +226,9 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
   MX_I2C1_Init();
-  MX_ADC1_Init();
   MX_USART3_UART_Init();
   MX_TIM1_Init();
+  MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
   SSnode_list =list_create();
   /* For Emulator only */
@@ -215,11 +267,17 @@ int main(void)
 
 	mySIM.sms = mySMS;
 
-	initTask(&myStation);
-	// Lora
-	initLora(&huart3, &hdma_usart3_rx);
+	// ADC
+	HAL_ADC_Start_IT(&hadc1);
 
-	initmyLora(&myStation);
+
+	initTask(&myStation);
+
+	// MBA and Step motor
+	initApp_MBA_stepmor();
+	// Lora
+//	initLora(&huart2, &hdma_usart2_rx);
+//	initmyLora(&huart3, &hdma_usart3_rx, &myStation);
 	// GPS
 	myGPS.getFlag = 0;
 	initGPS(&myStation, &myRTC);
@@ -227,7 +285,7 @@ int main(void)
 	initSIM(&huart1, &hdma_usart1_rx, &mySIM);
 
 	// Init Serial log
-	init_Serial_log(&huart2);
+//	init_Serial_log(&huart2);
 
 	// Init MQTT app
 	initApp_MQTT(&myStation, &mySIM);
@@ -243,11 +301,18 @@ int main(void)
 
 	LCD_Init();
 
+	initButton(&myDisplayMode, myStation.ssNode_list, &myStation.stepPosition);
 
 
+	initApp_Display(&myDisplayMode, &myRTC, &myStation);
+
+
+
+//DS3231_GetTime(&myRTC);
 //	myRTC.Year = 24;
 //	myRTC.Month = 1;
-//	myRTC.Date = 1;
+//	myRTC.Date = 11;
+//	myRTC.DaysOfWeek = 5;
 //	myRTC.Hour = 15;
 //	myRTC.Min = 17;
 //	myRTC.Sec = 0;
@@ -268,21 +333,19 @@ int main(void)
 //	  Serial_log_testOperation();
 //	  SIM_checkOperation();
 //	  MQTT_testReceive();
-//	  processApp_MCU();
-//	  processApp_MQTT();
+//	  LCD_GotoXY(1, 1);
+//	  LCD_Print("hello");
+	  processApp_MCU();
+	  processApp_MQTT();
+	  processingApp_display();
+	  processingApp_MBA_stepmor();
+
 //	  processApp_SMS();
 //	  LCD_PrintNumber(5);
 //	  processing_CMD(&myStation.stID);
-	  testSynchronize();
+//	  testSynchronize();
 //	  DS3231_GetTime(&myRTC);
-//	  sprintf((char*)RTC_buffer,"%d/%d/%d", myRTC.Date, myRTC.Month, myRTC.Year);
-////	  LCD_Clear();
-//	  LCD_GotoXY(3, 1);
-//	  LCD_PrintNumber(3);
-//	  LCD_Print((char*)RTC_buffer);
-//	  sprintf((char*)RTC_buffer,"%d:%d:%d", myRTC.Hour, myRTC.Min, myRTC.Sec);
-//	  LCD_GotoXY(3, 2);
-//	  LCD_Print((char*)RTC_buffer);
+
 //	  testSMS();
 //	  myStation.getGPStimeflag = 1;
 //	  HAL_GPIO_TogglePin(MBA_CONTACTOR_GPIO_Port, MBA_CONTACTOR_Pin);
@@ -339,6 +402,14 @@ void SystemClock_Config(void)
 
 /* USER CODE BEGIN 4 */
 
+static void currentConvert(uint32_t volatile *adcval)
+{
+	if (adccount == 1000)	{
+		myStation.stCurrent = (uint16_t)((*adcval)*3/4095) + 50;
+		*adcval = 0;
+		adccount = 0;
+	}
+}
 /* USER CODE END 4 */
 
 /**

@@ -23,6 +23,18 @@ void initApp_MCU(Station_t *station, SIM_t *mySIM)
 	__MY_SIM_MCU = mySIM;
 }
 
+uint8_t countNUMBofactiveSensor()
+{
+	uint8_t count = 0;
+	Node * current =__MY_STATION_MCU->ssNode_list->head->next;
+		while (current != __MY_STATION_MCU->ssNode_list->tail)	{
+			if (current->SSnode.Sensor_state == SENSOR_ACTIVE ) 	{
+				count++;
+			}
+			current = current->next;
+		}
+	return count;
+}
 void processApp_MCU(void)
 {
 		/*Check for task*/
@@ -32,7 +44,7 @@ void processApp_MCU(void)
 			triggerTaskflag(TASK_GET_GPS_TIME, FLAG_EN);
 
 			// Send WAKEUP command for Sensor
-	//		Lora_Setmode(WAKE);
+//			Lora_Setmode(WAKE);
 			//Check for sensor Ready
 
 			// Trigger send NETWORK READY message to Server

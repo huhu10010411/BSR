@@ -5,18 +5,24 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
+../Core/Src/Application/App_Display.c \
+../Core/Src/Application/App_MBA_stepmor.c \
 ../Core/Src/Application/App_MCU.c \
 ../Core/Src/Application/App_MQTT.c \
 ../Core/Src/Application/App_SMS.c \
 ../Core/Src/Application/App_Serial.c 
 
 OBJS += \
+./Core/Src/Application/App_Display.o \
+./Core/Src/Application/App_MBA_stepmor.o \
 ./Core/Src/Application/App_MCU.o \
 ./Core/Src/Application/App_MQTT.o \
 ./Core/Src/Application/App_SMS.o \
 ./Core/Src/Application/App_Serial.o 
 
 C_DEPS += \
+./Core/Src/Application/App_Display.d \
+./Core/Src/Application/App_MBA_stepmor.d \
 ./Core/Src/Application/App_MCU.d \
 ./Core/Src/Application/App_MQTT.d \
 ./Core/Src/Application/App_SMS.d \
@@ -30,7 +36,7 @@ Core/Src/Application/%.o Core/Src/Application/%.su: ../Core/Src/Application/%.c 
 clean: clean-Core-2f-Src-2f-Application
 
 clean-Core-2f-Src-2f-Application:
-	-$(RM) ./Core/Src/Application/App_MCU.d ./Core/Src/Application/App_MCU.o ./Core/Src/Application/App_MCU.su ./Core/Src/Application/App_MQTT.d ./Core/Src/Application/App_MQTT.o ./Core/Src/Application/App_MQTT.su ./Core/Src/Application/App_SMS.d ./Core/Src/Application/App_SMS.o ./Core/Src/Application/App_SMS.su ./Core/Src/Application/App_Serial.d ./Core/Src/Application/App_Serial.o ./Core/Src/Application/App_Serial.su
+	-$(RM) ./Core/Src/Application/App_Display.d ./Core/Src/Application/App_Display.o ./Core/Src/Application/App_Display.su ./Core/Src/Application/App_MBA_stepmor.d ./Core/Src/Application/App_MBA_stepmor.o ./Core/Src/Application/App_MBA_stepmor.su ./Core/Src/Application/App_MCU.d ./Core/Src/Application/App_MCU.o ./Core/Src/Application/App_MCU.su ./Core/Src/Application/App_MQTT.d ./Core/Src/Application/App_MQTT.o ./Core/Src/Application/App_MQTT.su ./Core/Src/Application/App_SMS.d ./Core/Src/Application/App_SMS.o ./Core/Src/Application/App_SMS.su ./Core/Src/Application/App_Serial.d ./Core/Src/Application/App_Serial.o ./Core/Src/Application/App_Serial.su
 
 .PHONY: clean-Core-2f-Src-2f-Application
 

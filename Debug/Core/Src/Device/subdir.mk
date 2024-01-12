@@ -5,15 +5,24 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
+../Core/Src/Device/Contactor.c \
 ../Core/Src/Device/SIM.c \
+../Core/Src/Device/Step_motor.c \
+../Core/Src/Device/button.c \
 ../Core/Src/Device/ds3231.c 
 
 OBJS += \
+./Core/Src/Device/Contactor.o \
 ./Core/Src/Device/SIM.o \
+./Core/Src/Device/Step_motor.o \
+./Core/Src/Device/button.o \
 ./Core/Src/Device/ds3231.o 
 
 C_DEPS += \
+./Core/Src/Device/Contactor.d \
 ./Core/Src/Device/SIM.d \
+./Core/Src/Device/Step_motor.d \
+./Core/Src/Device/button.d \
 ./Core/Src/Device/ds3231.d 
 
 
@@ -24,7 +33,7 @@ Core/Src/Device/%.o Core/Src/Device/%.su: ../Core/Src/Device/%.c Core/Src/Device
 clean: clean-Core-2f-Src-2f-Device
 
 clean-Core-2f-Src-2f-Device:
-	-$(RM) ./Core/Src/Device/SIM.d ./Core/Src/Device/SIM.o ./Core/Src/Device/SIM.su ./Core/Src/Device/ds3231.d ./Core/Src/Device/ds3231.o ./Core/Src/Device/ds3231.su
+	-$(RM) ./Core/Src/Device/Contactor.d ./Core/Src/Device/Contactor.o ./Core/Src/Device/Contactor.su ./Core/Src/Device/SIM.d ./Core/Src/Device/SIM.o ./Core/Src/Device/SIM.su ./Core/Src/Device/Step_motor.d ./Core/Src/Device/Step_motor.o ./Core/Src/Device/Step_motor.su ./Core/Src/Device/button.d ./Core/Src/Device/button.o ./Core/Src/Device/button.su ./Core/Src/Device/ds3231.d ./Core/Src/Device/ds3231.o ./Core/Src/Device/ds3231.su
 
 .PHONY: clean-Core-2f-Src-2f-Device
 

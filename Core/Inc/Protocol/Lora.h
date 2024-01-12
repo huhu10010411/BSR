@@ -8,7 +8,7 @@
 #ifndef INC_PROTOCOL_LORA_H_
 #define INC_PROTOCOL_LORA_H_
 
-//#include "stm32f1xx.h"
+#include "stm32f1xx.h"
 #include "main.h"
 
 #define START_POS		0
@@ -19,15 +19,18 @@
 #define START_VALUE		1
 
 extern UART_HandleTypeDef *__LORA_UART;
+
 void initLora(UART_HandleTypeDef *huart, DMA_HandleTypeDef *hdma);
 
-void initmyLora(Station_t *myStation);
+void initmyLora(UART_HandleTypeDef *huart, DMA_HandleTypeDef *hdma, Station_t *myStation);
 
-void enableReceiveDMAtoIdle_LORA(void);
+void enableReceiveDMAtoIdle_Lora(void);
 
 void Lora_callback(uint16_t Size);
 
 uint8_t Lora_Setmode(sensor_mode_t mode);
+
+void Lora_receive(uint8_t *Msg, uint8_t msglen);
 
 void MarkAsReadData_LORA(void);
 

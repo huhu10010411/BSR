@@ -27,7 +27,8 @@ Core/Src/usart.o: ../Core/Src/usart.c ../Core/Inc/usart.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h \
- ../Core/Inc/linkedlist.h D:/blue_pill_pj/Station/Core/Inc/Device/SIM.h
+ ../Core/Inc/linkedlist.h D:/blue_pill_pj/Station/Core/Inc/Device/SIM.h \
+ D:/blue_pill_pj/Station/Core/Inc/Device/Contactor.h
 ../Core/Inc/usart.h:
 ../Core/Inc/main.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h:
@@ -60,3 +61,4 @@ Core/Src/usart.o: ../Core/Src/usart.c ../Core/Inc/usart.h \
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h:
 ../Core/Inc/linkedlist.h:
 D:/blue_pill_pj/Station/Core/Inc/Device/SIM.h:
+D:/blue_pill_pj/Station/Core/Inc/Device/Contactor.h:

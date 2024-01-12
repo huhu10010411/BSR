@@ -5,4 +5,4 @@
 ../Core/Src/Communication/Serial_CFG.c:116:6:processing_CMD	56	static
 ../Core/Src/Communication/Serial_CFG.c:186:6:MarkAsReadData_CFG	4	static
 ../Core/Src/Communication/Serial_CFG.c:191:9:getGPS_time	56	static
-../Core/Src/Communication/Serial_CFG.c:221:6:testSynchronize	24	static
+../Core/Src/Communication/Serial_CFG.c:222:6:testSynchronize	24	static

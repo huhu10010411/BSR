@@ -27,7 +27,10 @@ Core/Src/Device/ds3231.o: ../Core/Src/Device/ds3231.c \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h \
- D:/blue_pill_pj/Station/Core/Inc/Device/ds3231.h
+ D:/blue_pill_pj/Station/Core/Inc/Device/ds3231.h ../Core/Inc/i2c.h \
+ ../Core/Inc/main.h ../Core/Inc/linkedlist.h \
+ D:/blue_pill_pj/Station/Core/Inc/Device/SIM.h \
+ D:/blue_pill_pj/Station/Core/Inc/Device/Contactor.h
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h:
 ../Core/Inc/stm32f1xx_hal_conf.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_rcc.h:
@@ -57,3 +60,8 @@ Core/Src/Device/ds3231.o: ../Core/Src/Device/ds3231.c \
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h:
 D:/blue_pill_pj/Station/Core/Inc/Device/ds3231.h:
+../Core/Inc/i2c.h:
+../Core/Inc/main.h:
+../Core/Inc/linkedlist.h:
+D:/blue_pill_pj/Station/Core/Inc/Device/SIM.h:
+D:/blue_pill_pj/Station/Core/Inc/Device/Contactor.h:

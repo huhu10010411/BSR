@@ -13,9 +13,6 @@
 #include "gpio.h"
 #include "user_delay.h"
 
-#define MAX_COLUMN		15
-#define MAX_ROW			3
-
 /* MACROS AND DEFINES --------------------------------------------------------*/
 typedef struct
 {
@@ -29,7 +26,17 @@ typedef struct
 } StructManageLCD1604;
 
 /* TYPEDEFS ------------------------------------------------------------------*/
-
+typedef enum
+{
+	_LCD_CHAR_RIGHT = 0,
+	_LCD_CHAR_RIGHT_INVERT,
+	_LCD_CHAR_LEFT,
+	_LCD_CHAR_LEFT_INVERT,
+	_LCD_CHAR_EMPTY,
+	_LCD_CHAR_FULL,
+	_LCD_CHAR_UP,
+	_LCD_CHAR_DOWN,
+} eSpecialChar;
 /* EXTERNAL VARIABLES --------------------------------------------------------*/
 
 /* GLOBAL FUNCTION PROTOTYPES ------------------------------------------------*/
@@ -39,9 +46,8 @@ void LCD_SendData(uint8_t data);
 void LCD_GotoXY(uint8_t x, uint8_t y);
 void LCD_Print(char *str);
 void LCD_PrintNumber(uint16_t number);
-void LCD_ClearXY(uint8_t x, uint8_t y);
-void LCD_ClearRow(uint8_t row);
 void LCD_Clear();
+void LCD_CallSpecialChar(uint8_t num);
 
 #endif /*USER_LCD1604_H_*/
 

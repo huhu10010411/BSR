@@ -1,0 +1,5 @@
+../Core/Src/Application/App_Display.c:21:6:initApp_Display	24	static
+../Core/Src/Application/App_Display.c:29:6:display_SensorX	40	static
+../Core/Src/Application/App_Display.c:46:6:setSwitchtime	8	static
+../Core/Src/Application/App_Display.c:50:6:getSwitchtime	16	static
+../Core/Src/Application/App_Display.c:54:6:processingApp_display	16	static

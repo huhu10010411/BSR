@@ -29,7 +29,7 @@ SIM_t	*__SIM;
 uint16_t oldPos =0, newPos =0;
 uint8_t SIMbuff[SIM_BUFF_SIZE];
 uint8_t SIMRxbuff[SIM_RXBUFF_SIZE];
-uint8_t SIM_Txbuff[100];
+
 uint8_t SMS_Rxbuff [SIM_SMS_RXSIZE];
 uint8_t MQTT_Rxbuff [MQTT_RXBUFF_SIZE];
 uint16_t head =0, tail=0;
@@ -53,7 +53,7 @@ void initSIM(UART_HandleTypeDef *huart, DMA_HandleTypeDef  *hdma , SIM_t *mySIM)
 }
 void enableReceiveDMAtoIdle_SIM(void)
 {
-	  HAL_UARTEx_ReceiveToIdle_DMA(__SIM_UART, SIMRxbuff, SIM_RXBUFF_SIZE);
+	 HAL_UARTEx_ReceiveToIdle_DMA(__SIM_UART, SIMRxbuff, SIM_RXBUFF_SIZE);
 	  __HAL_DMA_DISABLE_IT(__SIM_DMA_UART,DMA_IT_HT);
 }
 
@@ -129,8 +129,8 @@ SIM_res_t SIM_checkMsg(uint8_t *Msg, uint16_t timeout)
 	SIM_res_t res= SIM_NO_RES;
 	timeout /= 500;
 	uint8_t dataSize = 0;
-	uint8_t *tmpdbuff = (uint8_t*)malloc(512);
-
+	uint8_t tmpdbuff[SIM_BUFF_SIZE];
+	memset( (char*)tmpdbuff, 0, SIM_BUFF_SIZE );
 	for (uint16_t i = 0; i < 500 ; i++)
 	{
 		HAL_Delay(timeout);
@@ -139,14 +139,13 @@ SIM_res_t SIM_checkMsg(uint8_t *Msg, uint16_t timeout)
 		{
 			dataSize = head - tail ;
 //			tmpdbuff = (uint8_t*)malloc(dataSize*sizeof(uint8_t));
-			memset( (char*)tmpdbuff, 0, 512 );
+
 			memcpy(tmpdbuff, SIMbuff + tail, dataSize);
 		}
 		else if ( head < tail )
 		{
 			dataSize = SIM_BUFF_SIZE - tail + head ;
 //		 	tmpdbuff = (uint8_t*)malloc(dataSize*sizeof(uint8_t));
-			memset( (char*)tmpdbuff, 0, 512 );
 			memcpy(tmpdbuff, SIMbuff + tail, SIM_BUFF_SIZE - tail);
 			memcpy(tmpdbuff + SIM_BUFF_SIZE - tail, SIMbuff, head);
 		}
@@ -164,7 +163,6 @@ SIM_res_t SIM_checkMsg(uint8_t *Msg, uint16_t timeout)
 //			Serial_log_string("\nhead: ");
 //			Serial_log_number(head);
 //			Serial_log_string(" ");
-			free(tmpdbuff);
 			return SIM_RES_MSG ;
 		}
 
@@ -172,7 +170,6 @@ SIM_res_t SIM_checkMsg(uint8_t *Msg, uint16_t timeout)
 //			Serial_log_string("err: ");
 //			Serial_log_buffer(tmpdbuff, dataSize);
 //			Serial_log_string(";");
-			free(tmpdbuff);
 			return SIM_ERROR ;
 		}
 	}
@@ -186,13 +183,13 @@ SIM_res_t SIM_checkMsg(uint8_t *Msg, uint16_t timeout)
 //	Serial_log_string("\nhead: ");
 //	Serial_log_number(head);
 //	Serial_log_string(" ");
-	free(tmpdbuff);
  	return res;
 
 }
 
 SIM_res_t SIM_sendCMD(uint8_t *cmd, uint8_t *checkResMsg, uint8_t CheckResENorDIS, uint8_t ENorDISmarkasread, uint32_t timeout)
 {
+	uint8_t SIM_Txbuff[100];
 	uint8_t len = sprintf( (char*)SIM_Txbuff, "%s\r\n", cmd);
 	if ( HAL_UART_Transmit(__SIM_UART, SIM_Txbuff, len, 0xFFFF) != HAL_OK )	{
 		Serial_log_string("UART transmit ERROR\r\n");
@@ -212,8 +209,6 @@ SIM_res_t SIM_sendCMD(uint8_t *cmd, uint8_t *checkResMsg, uint8_t CheckResENorDI
 	}
 	return SIM_NO_RES;
 }
-
-
 
 void MarkAsReadData_SIM(void)
 {
@@ -486,6 +481,7 @@ uint8_t SMS_read()
 
 uint8_t SMS_readAgain(uint8_t SMSindex)
 {
+	uint8_t SIM_Txbuff[100];
 	sprintf((char*)SIM_Txbuff, "AT+CMGR=%d",SMSindex);
 	if  ( SIM_sendCMD(SIM_Txbuff, (uint8_t*)"OK",ENABLE_SIM_CHECKRES,
 					  ENABLE_MARKASREAD, 1000) != SIM_RES_MSG)	{
@@ -744,7 +740,7 @@ uint8_t SMS_config()
 uint8_t SMS_sendMsg(uint8_t *Msg, uint16_t msglen, uint8_t *phonenumber )
 {
 	if ( !SMS_config() )	return 0;
-
+	uint8_t SIM_Txbuff[100];
 	sprintf((char*)SIM_Txbuff, "AT+CMGS=\"%s\"", phonenumber);
 	if ( SIM_sendCMD(SIM_Txbuff, (uint8_t*)">", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, SIM_TIMEOUT_LONG) != SIM_RES_MSG)	return 0;
 

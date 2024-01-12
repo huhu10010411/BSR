@@ -12,7 +12,7 @@
 
 #define LOG_TIMEOUT		1000
 
-UART_HandleTypeDef *__SERIAL_LOG_UART;
+static UART_HandleTypeDef *__SERIAL_LOG_UART;
 
 void init_Serial_log (UART_HandleTypeDef *huart)
 {

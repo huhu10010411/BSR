@@ -1,0 +1,13 @@
+../Core/Src/Device/Step_motor.c:19:6:setLimit	16	static
+../Core/Src/Device/Step_motor.c:24:9:getLimit	4	static
+../Core/Src/Device/Step_motor.c:29:17:Step_getDir	4	static
+../Core/Src/Device/Step_motor.c:34:6:Step_setDir	16	static
+../Core/Src/Device/Step_motor.c:39:6:increaseStepchange	4	static
+../Core/Src/Device/Step_motor.c:49:6:decreaseStepchange	4	static
+../Core/Src/Device/Step_motor.c:59:10:getStepchange	4	static
+../Core/Src/Device/Step_motor.c:64:9:Step_getPercentChange	4	static
+../Core/Src/Device/Step_motor.c:69:6:Step_setPercentChange	16	static
+../Core/Src/Device/Step_motor.c:74:6:Step_setChangeMode	16	static
+../Core/Src/Device/Step_motor.c:79:25:Step_getChangemode	4	static
+../Core/Src/Device/Step_motor.c:84:6:Step_step	16	static
+../Core/Src/Device/Step_motor.c:89:6:Step_percent	24	static

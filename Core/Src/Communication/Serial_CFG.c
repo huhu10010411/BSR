@@ -42,7 +42,7 @@ _RTC *__MY_RTC;
 
 uint8_t alarmflag = 0;
 
-void initSerial_CFG(UART_HandleTypeDef *huart,DMA_HandleTypeDef  *hdma)
+void initSerial_CFG(UART_HandleTypeDef *huart, DMA_HandleTypeDef  *hdma)
 {
 	__SCFG_UART = huart;
 	__SCFG_DMA_UART = hdma;
@@ -191,6 +191,7 @@ void MarkAsReadData_CFG(void)
 uint8_t getGPS_time(_RTC *myRTC)
 {
 //	if (__MY_GPS->getFlag) return 0;
+	if ( !DS3231_GetTime(myRTC) )		return 0;
 	uint16_t gpslen = GPS_size;
 	uint8_t *currPos = isWordinBuff(GPS_rxbuffer, gpslen, (uint8_t*)"$GPRMC");
 	if ( currPos == NULL )	{

@@ -25,7 +25,8 @@ C_SRCS += \
 ../Core/Src/usart.c \
 ../Core/Src/user_a4988.c \
 ../Core/Src/user_delay.c \
-../Core/Src/user_lcd1604.c 
+../Core/Src/user_lcd1604.c \
+../Core/Src/user_screen.c 
 
 OBJS += \
 ./Core/Src/String_process.o \
@@ -48,7 +49,8 @@ OBJS += \
 ./Core/Src/usart.o \
 ./Core/Src/user_a4988.o \
 ./Core/Src/user_delay.o \
-./Core/Src/user_lcd1604.o 
+./Core/Src/user_lcd1604.o \
+./Core/Src/user_screen.o 
 
 C_DEPS += \
 ./Core/Src/String_process.d \
@@ -71,7 +73,8 @@ C_DEPS += \
 ./Core/Src/usart.d \
 ./Core/Src/user_a4988.d \
 ./Core/Src/user_delay.d \
-./Core/Src/user_lcd1604.d 
+./Core/Src/user_lcd1604.d \
+./Core/Src/user_screen.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
@@ -81,7 +84,7 @@ Core/Src/%.o Core/Src/%.su: ../Core/Src/%.c Core/Src/subdir.mk
 clean: clean-Core-2f-Src
 
 clean-Core-2f-Src:
-	-$(RM) ./Core/Src/String_process.d ./Core/Src/String_process.o ./Core/Src/String_process.su ./Core/Src/Task.d ./Core/Src/Task.o ./Core/Src/Task.su ./Core/Src/Validation.d ./Core/Src/Validation.o ./Core/Src/Validation.su ./Core/Src/adc.d ./Core/Src/adc.o ./Core/Src/adc.su ./Core/Src/crc32.d ./Core/Src/crc32.o ./Core/Src/crc32.su ./Core/Src/dma.d ./Core/Src/dma.o ./Core/Src/dma.su ./Core/Src/flash_storage.d ./Core/Src/flash_storage.o ./Core/Src/flash_storage.su ./Core/Src/gpio.d ./Core/Src/gpio.o ./Core/Src/gpio.su ./Core/Src/i2c.d ./Core/Src/i2c.o ./Core/Src/i2c.su ./Core/Src/linkedlist.d ./Core/Src/linkedlist.o ./Core/Src/linkedlist.su ./Core/Src/main.d ./Core/Src/main.o ./Core/Src/main.su ./Core/Src/stm32f1xx_hal_msp.d ./Core/Src/stm32f1xx_hal_msp.o ./Core/Src/stm32f1xx_hal_msp.su ./Core/Src/stm32f1xx_it.d ./Core/Src/stm32f1xx_it.o ./Core/Src/stm32f1xx_it.su ./Core/Src/syscalls.d ./Core/Src/syscalls.o ./Core/Src/syscalls.su ./Core/Src/sysmem.d ./Core/Src/sysmem.o ./Core/Src/sysmem.su ./Core/Src/system_stm32f1xx.d ./Core/Src/system_stm32f1xx.o ./Core/Src/system_stm32f1xx.su ./Core/Src/tim.d ./Core/Src/tim.o ./Core/Src/tim.su ./Core/Src/usart.d ./Core/Src/usart.o ./Core/Src/usart.su ./Core/Src/user_a4988.d ./Core/Src/user_a4988.o ./Core/Src/user_a4988.su ./Core/Src/user_delay.d ./Core/Src/user_delay.o ./Core/Src/user_delay.su ./Core/Src/user_lcd1604.d ./Core/Src/user_lcd1604.o ./Core/Src/user_lcd1604.su
+	-$(RM) ./Core/Src/String_process.d ./Core/Src/String_process.o ./Core/Src/String_process.su ./Core/Src/Task.d ./Core/Src/Task.o ./Core/Src/Task.su ./Core/Src/Validation.d ./Core/Src/Validation.o ./Core/Src/Validation.su ./Core/Src/adc.d ./Core/Src/adc.o ./Core/Src/adc.su ./Core/Src/crc32.d ./Core/Src/crc32.o ./Core/Src/crc32.su ./Core/Src/dma.d ./Core/Src/dma.o ./Core/Src/dma.su ./Core/Src/flash_storage.d ./Core/Src/flash_storage.o ./Core/Src/flash_storage.su ./Core/Src/gpio.d ./Core/Src/gpio.o ./Core/Src/gpio.su ./Core/Src/i2c.d ./Core/Src/i2c.o ./Core/Src/i2c.su ./Core/Src/linkedlist.d ./Core/Src/linkedlist.o ./Core/Src/linkedlist.su ./Core/Src/main.d ./Core/Src/main.o ./Core/Src/main.su ./Core/Src/stm32f1xx_hal_msp.d ./Core/Src/stm32f1xx_hal_msp.o ./Core/Src/stm32f1xx_hal_msp.su ./Core/Src/stm32f1xx_it.d ./Core/Src/stm32f1xx_it.o ./Core/Src/stm32f1xx_it.su ./Core/Src/syscalls.d ./Core/Src/syscalls.o ./Core/Src/syscalls.su ./Core/Src/sysmem.d ./Core/Src/sysmem.o ./Core/Src/sysmem.su ./Core/Src/system_stm32f1xx.d ./Core/Src/system_stm32f1xx.o ./Core/Src/system_stm32f1xx.su ./Core/Src/tim.d ./Core/Src/tim.o ./Core/Src/tim.su ./Core/Src/usart.d ./Core/Src/usart.o ./Core/Src/usart.su ./Core/Src/user_a4988.d ./Core/Src/user_a4988.o ./Core/Src/user_a4988.su ./Core/Src/user_delay.d ./Core/Src/user_delay.o ./Core/Src/user_delay.su ./Core/Src/user_lcd1604.d ./Core/Src/user_lcd1604.o ./Core/Src/user_lcd1604.su ./Core/Src/user_screen.d ./Core/Src/user_screen.o ./Core/Src/user_screen.su
 
 .PHONY: clean-Core-2f-Src
 

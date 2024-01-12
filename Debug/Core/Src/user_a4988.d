@@ -28,7 +28,8 @@ Core/Src/user_a4988.o: ../Core/Src/user_a4988.c ../Core/Inc/user_a4988.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h \
  ../Core/Inc/gpio.h ../Core/Inc/main.h ../Core/Inc/linkedlist.h \
- D:/blue_pill_pj/Station/Core/Inc/Device/SIM.h
+ D:/blue_pill_pj/Station/Core/Inc/Device/SIM.h \
+ D:/blue_pill_pj/Station/Core/Inc/Device/Contactor.h
 ../Core/Inc/user_a4988.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h:
 ../Core/Inc/stm32f1xx_hal_conf.h:
@@ -62,3 +63,4 @@ Core/Src/user_a4988.o: ../Core/Src/user_a4988.c ../Core/Inc/user_a4988.h \
 ../Core/Inc/main.h:
 ../Core/Inc/linkedlist.h:
 D:/blue_pill_pj/Station/Core/Inc/Device/SIM.h:
+D:/blue_pill_pj/Station/Core/Inc/Device/Contactor.h:

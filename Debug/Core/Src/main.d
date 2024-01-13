@@ -34,14 +34,12 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  D:/blue_pill_pj/Station/Core/Inc/Application/App_MQTT.h \
  D:/blue_pill_pj/Station/Core/Inc/Communication/Serial_CFG.h \
  D:/blue_pill_pj/Station/Core/Inc/Device/ds3231.h \
- D:/blue_pill_pj/Station/Core/Inc/Communication/Serial_log.h \
  D:/blue_pill_pj/Station/Core/Inc/Application/App_Serial.h \
  ../Core/Inc/flash_storage.h \
  D:/blue_pill_pj/Station/Core/Inc/Protocol/Lora.h ../Core/Inc/Task.h \
  D:/blue_pill_pj/Station/Core/Inc/Application/App_MCU.h \
  D:/blue_pill_pj/Station/Core/Inc/Application/App_SMS.h \
- ../Core/Inc/user_lcd1604.h ../Core/Inc/gpio.h ../Core/Inc/user_delay.h \
- ../Core/Inc/tim.h D:/blue_pill_pj/Station/Core/Inc/Device/button.h \
+ D:/blue_pill_pj/Station/Core/Inc/Device/button.h \
  D:/blue_pill_pj/Station/Core/Inc/Application/App_Display.h \
  ../Core/Inc/linkedlist.h \
  D:/blue_pill_pj/Station/Core/Inc/Application/App_MBA_stepmor.h
@@ -87,17 +85,12 @@ D:/blue_pill_pj/Station/Core/Inc/Device/Contactor.h:
 D:/blue_pill_pj/Station/Core/Inc/Application/App_MQTT.h:
 D:/blue_pill_pj/Station/Core/Inc/Communication/Serial_CFG.h:
 D:/blue_pill_pj/Station/Core/Inc/Device/ds3231.h:
-D:/blue_pill_pj/Station/Core/Inc/Communication/Serial_log.h:
 D:/blue_pill_pj/Station/Core/Inc/Application/App_Serial.h:
 ../Core/Inc/flash_storage.h:
 D:/blue_pill_pj/Station/Core/Inc/Protocol/Lora.h:
 ../Core/Inc/Task.h:
 D:/blue_pill_pj/Station/Core/Inc/Application/App_MCU.h:
 D:/blue_pill_pj/Station/Core/Inc/Application/App_SMS.h:
-../Core/Inc/user_lcd1604.h:
-../Core/Inc/gpio.h:
-../Core/Inc/user_delay.h:
-../Core/Inc/tim.h:
 D:/blue_pill_pj/Station/Core/Inc/Device/button.h:
 D:/blue_pill_pj/Station/Core/Inc/Application/App_Display.h:
 ../Core/Inc/linkedlist.h:

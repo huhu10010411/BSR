@@ -58,7 +58,7 @@ typedef struct {
 	uint8_t subscribe : 1;
 	uint8_t PrepareCalib: 1;
 	uint8_t StartCalib : 1;
-	uint8_t CtrlMBA : 1;
+	uint8_t sendMBAstatus : 1;
 	uint8_t CtrlStepmotor : 1;
 	uint8_t getGPStimeflag : 1;
 	uint8_t sendDataPeriod :1;
@@ -71,9 +71,10 @@ typedef struct {
 	uint8_t sendcmdGetstatus : 1;
 	uint8_t sendcmdGetstation : 1;
 	uint8_t sendcmdGetsensor : 1;
+	uint8_t sendSTEPLIMIT : 1;
 }Task_handle_t;
 
-#define TASK_FLAG_INIT	{1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+#define TASK_FLAG_INIT	{1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 
 
 typedef struct {
@@ -93,6 +94,8 @@ typedef struct {
 
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
+extern Station_t myStation;
+extern SIM_t mySIM;
 #define STATION_T_INIT	{STATION_MODE_NORMAL, 8, 300, 0, MBA_ON, 0, NULL, TASK_FLAG_INIT}
 
 #define ACTIVE		0x01
@@ -142,6 +145,7 @@ Station_Mode_t checkStationMode();
 #define MOTOR_SLEEP_GPIO_Port GPIOB
 #define LIMIT_SWITCH_MIN_Pin GPIO_PIN_2
 #define LIMIT_SWITCH_MIN_GPIO_Port GPIOB
+#define LIMIT_SWITCH_MIN_EXTI_IRQn EXTI2_IRQn
 #define MOTOR_RST_Pin GPIO_PIN_12
 #define MOTOR_RST_GPIO_Port GPIOB
 #define MOTOR_EN_Pin GPIO_PIN_13

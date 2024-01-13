@@ -28,12 +28,12 @@ Core/Src/Application/App_Serial.o: ../Core/Src/Application/App_Serial.c \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h \
- ../Core/Inc/main.h ../Core/Inc/linkedlist.h \
- D:/blue_pill_pj/Station/Core/Inc/Device/SIM.h \
- D:/blue_pill_pj/Station/Core/Inc/Device/Contactor.h \
  D:/blue_pill_pj/Station/Core/Inc/Communication/Serial_CFG.h \
  D:/blue_pill_pj/Station/Core/Inc/Device/ds3231.h ../Core/Inc/i2c.h \
- ../Core/Inc/main.h ../Core/Inc/usart.h
+ ../Core/Inc/main.h ../Core/Inc/linkedlist.h \
+ D:/blue_pill_pj/Station/Core/Inc/Device/SIM.h \
+ D:/blue_pill_pj/Station/Core/Inc/Device/Contactor.h ../Core/Inc/main.h \
+ ../Core/Inc/usart.h
 D:/blue_pill_pj/Station/Core/Inc/Application/App_Serial.h:
 ../Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f1xx.h:
 ../Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f103xb.h:
@@ -63,12 +63,12 @@ D:/blue_pill_pj/Station/Core/Inc/Application/App_Serial.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h:
+D:/blue_pill_pj/Station/Core/Inc/Communication/Serial_CFG.h:
+D:/blue_pill_pj/Station/Core/Inc/Device/ds3231.h:
+../Core/Inc/i2c.h:
 ../Core/Inc/main.h:
 ../Core/Inc/linkedlist.h:
 D:/blue_pill_pj/Station/Core/Inc/Device/SIM.h:
 D:/blue_pill_pj/Station/Core/Inc/Device/Contactor.h:
-D:/blue_pill_pj/Station/Core/Inc/Communication/Serial_CFG.h:
-D:/blue_pill_pj/Station/Core/Inc/Device/ds3231.h:
-../Core/Inc/i2c.h:
 ../Core/Inc/main.h:
 ../Core/Inc/usart.h:

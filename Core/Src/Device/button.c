@@ -11,50 +11,70 @@
 #include  "user_lcd1604.h"
 #include "user_a4988.h"
 #include "Step_motor.h"
+#include "main.h"
 
 
 
-static s_list *__MY_SS_LIST;
 static DISPLAY_MODE_t *__MY_DISPLAY_MODE;
-static uint16_t *__MY_STEP_POSITION;
-static CONTROL_t curControl = CONTROL_TRANS;
+static CONTROL_t curControl = CONTROL_STEP;
 static SWITCH_t curSwitch = SW_ON;
 static uint8_t volatile curMonitor = 0;
 
 static uint8_t volatile clearflag = 0;
 
-static uint8_t clearPosX = 0;
-static uint8_t clearPosY = 0;
-static uint8_t clearPosflag = 0;
+//static uint8_t clearPosX = 0;
+//static uint8_t clearPosY = 0;
+//static uint8_t clearPosflag = 0;
 
-void setClearPosflag()
+static STEP_t stepValorDir = STEP_VAL;
+
+//, s_list *mylist, Station_t *myStation
+
+void initButton(DISPLAY_MODE_t *displaymode)
 {
-	clearPosflag = 1;
+	__MY_DISPLAY_MODE = displaymode;
+//	myStation.ssNode_list = mylist;
+//	myStation = myStation;
 }
-/* @func : getClearPosflag
- * @return : 1 flag is set
- * 			0 flag is not set
- */
-uint8_t getClearPosflag()
+
+void setStepValorDir (STEP_t ValorDir)
 {
-	return clearPosflag;
+	stepValorDir = ValorDir;
 }
-/*
- * @func: getClearPos
- * @argument: XorY
- * @return:	XorY == 0 : Xpos
- * 			XorY == other Y
- *
- */
-uint8_t getClearPos(uint8_t XorY)
+
+STEP_t getStepValorDir()
 {
-	if (XorY == 0 )	{
-		return clearPosX;
-	}
-	else {
-		return clearPosY;
-	}
+	return stepValorDir;
 }
+
+//void setClearPosflag()
+//{
+//	clearPosflag = 1;
+//}
+///* @func : getClearPosflag
+// * @return : 1 flag is set
+// * 			0 flag is not set
+// */
+//uint8_t getClearPosflag()
+//{
+//	return clearPosflag;
+//}
+///*
+// * @func: getClearPos
+// * @argument: XorY
+// * @return:	XorY == 0 : Xpos
+// * 			XorY == other Y
+// *
+// */
+//uint8_t getClearPos(uint8_t XorY)
+//{
+//	if (XorY == 0 )	{
+//		return clearPosX;
+//	}
+//	else {
+//		return clearPosY;
+//	}
+//}
 
 SWITCH_t getCurswitch()
 {
@@ -75,12 +95,7 @@ void setClearflag(uint8_t ENorDIS)
 {
 	clearflag = ENorDIS;
 }
-void initButton(DISPLAY_MODE_t *displaymode, s_list *mylist, uint16_t *myStepposition)
-{
-	__MY_DISPLAY_MODE = displaymode;
-	__MY_SS_LIST = mylist;
-	__MY_STEP_POSITION = myStepposition;
-}
+
 
 void switchcurControl()
 {
@@ -100,8 +115,6 @@ CONTROL_t getcurControl()
 {
 	return curControl;
 }
-
-
 
 void nextMonitor(uint8_t volatile  * curMonitor, uint8_t max)	{
 	if (*curMonitor >= max )		{
@@ -160,6 +173,14 @@ void buttonMENU_handler()
 		*__MY_DISPLAY_MODE = HOME;
 		setClearflag(ENABLE);
 		break;
+	case STEP_VAL_CONTROL:
+		*__MY_DISPLAY_MODE = HOME;
+		setClearflag(ENABLE);
+		break;
+	case STEP_DIR_CONTROL:
+		*__MY_DISPLAY_MODE = HOME;
+		setClearflag(ENABLE);
+			break;
 	case ON_OFF_CONTROL:
 		*__MY_DISPLAY_MODE = HOME;
 		setClearflag(ENABLE);
@@ -194,16 +215,40 @@ void buttonOK_handler()
 		}
 		break;
 	case VOLTAGE_CONTROL:
-		triggerTaskflag(TASK_CTRL_STEPMOR, FLAG_EN);
+		switch (getStepValorDir())	{
+		case STEP_VAL:
+			*__MY_DISPLAY_MODE = STEP_VAL_CONTROL;
+			break;
+		case STEP_DIR:
+			*__MY_DISPLAY_MODE = STEP_DIR_CONTROL;
+			break;
+		case STEP_CONFIRM:
+			triggerTaskflag(TASK_CTRL_STEPMOR, FLAG_EN);
+			break;
+		default:
+			break;
+		}
+		setClearflag(ENABLE);
+		break;
+	case STEP_VAL_CONTROL:
+		*__MY_DISPLAY_MODE = VOLTAGE_CONTROL;
+		setClearflag(ENABLE);
+		break;
+	case STEP_DIR_CONTROL:
+		*__MY_DISPLAY_MODE = VOLTAGE_CONTROL;
+		setClearflag(ENABLE);
 		break;
 	case ON_OFF_CONTROL:
 		// switch MBA
 		if(getCurswitch() == SW_ON)	{
-			switchContactor(MBA_ON);
+			myStation.MBAstate = switchContactor(MBA_ON);
+
+
 		}
 		else {
-			switchContactor(MBA_OFF);
+			myStation.MBAstate = switchContactor(MBA_OFF);
 		}
+
 		setSwitchtime();
 		*__MY_DISPLAY_MODE = COMPLETE_CONTROL;
 		setClearflag(ENABLE);
@@ -227,7 +272,7 @@ void buttonDOWN_handler()
 		break;
 	case MONITOR:
 		// move to next sensor ID
-		nextMonitor(&curMonitor, __MY_SS_LIST->length);
+		nextMonitor(&curMonitor, myStation.ssNode_list->length);
 		setClearflag(ENABLE);
 		break;
 	case MENU_CONTROL:
@@ -235,8 +280,28 @@ void buttonDOWN_handler()
 		setClearflag(ENABLE);
 		break;
 	case VOLTAGE_CONTROL:
+		switch(getStepValorDir())	{
+		case STEP_VAL:
+			setStepValorDir(STEP_DIR);
+			break;
+		case STEP_DIR:
+			setStepValorDir(STEP_CONFIRM);
+			break;
+		case STEP_CONFIRM:
+			setStepValorDir(STEP_VAL);
+			break;
+		default:
+			break;
+		}
+		setClearflag(ENABLE);
+		break;
+	case STEP_VAL_CONTROL:
 		// decrease step value
 		decreaseStepchange();
+		setClearflag(ENABLE);
+		break;
+	case STEP_DIR_CONTROL:
+		Step_toggleDir();
 		setClearflag(ENABLE);
 		break;
 	case ON_OFF_CONTROL:
@@ -250,8 +315,8 @@ void buttonDOWN_handler()
 			break;
 		default:
 			break;
-			setClearflag(ENABLE);
 		}
+		setClearflag(ENABLE);
 		break;
 	case COMPLETE_CONTROL:
 		break;
@@ -269,7 +334,7 @@ void buttonUP_handler()
 	case AFTER_SW_OFF:
 		break;
 	case MONITOR:
-		previousMonitor(&curMonitor, __MY_SS_LIST->length);
+		previousMonitor(&curMonitor, myStation.ssNode_list->length);
 		setClearflag(ENABLE);
 		break;
 	case MENU_CONTROL:
@@ -277,9 +342,27 @@ void buttonUP_handler()
 		setClearflag(ENABLE);
 		break;
 	case VOLTAGE_CONTROL:
+		switch (getStepValorDir())	{
+		case STEP_DIR:
+			setStepValorDir(STEP_VAL);
+			break;
+		case STEP_VAL:
+			setStepValorDir(STEP_CONFIRM);
+			break;
+		case STEP_CONFIRM:
+			setStepValorDir(STEP_DIR);
+			break;
+		default:
+			break;
+		}
+		setClearflag(ENABLE);
+		break;
+	case STEP_VAL_CONTROL:
 		// increase step value
 		increaseStepchange();
-		setClearflag(ENABLE);
+		break;
+	case STEP_DIR_CONTROL:
+		Step_toggleDir();
 		break;
 	case ON_OFF_CONTROL:
 		switch (curSwitch) {
@@ -305,10 +388,12 @@ void SW_LIMIT_MAX_handler()
 	setClearflag(ENABLE);
 	A4988_DisableDriver();
 	setLimit(LIMIT_MAX);
+	triggerTaskflag(TASK_SEND_STEP_LIMIT, FLAG_EN);
 }
 void SW_LIMIT_MIN_handler()
 {
 	setClearflag(ENABLE);
 	A4988_DisableDriver();
 	setLimit(LIMIT_MIN);
+	triggerTaskflag(TASK_SEND_STEP_LIMIT, FLAG_EN);
 }

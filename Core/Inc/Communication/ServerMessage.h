@@ -10,7 +10,7 @@
 
 #include "MQTT.h"
 #include "linkedlist.h"
-#include "main.h"
+//#include "main.h"
 #include "Step_motor.h"
 #include "Contactor.h"
 
@@ -28,6 +28,9 @@
 #define CMDREST_POS		3
 #define ADDDATA_POS		3
 #define MBA_STATE_POS	3
+#define DIR_POS			3
+#define CHANGE_MODEPOS	4
+#define CHANGE_VALUE    5
 
 #define USER_MSG_HEADER_NUMBOF_ACT_STATION		(char*)"So luong station node dang hoat dong"
 #define USER_MSG_HEADER_NUMBOF_ACT_SENSOR		(char*)"So luong sensor node dang hoat dong"
@@ -84,7 +87,7 @@ typedef enum
 
 
 
-void initServerMsg (Station_t *Station, SMS_t *mySMS);
+void initServerMsg ();
 
 void triggerCMD (CMD_t cmdType);
 

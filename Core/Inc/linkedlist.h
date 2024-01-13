@@ -21,7 +21,8 @@ typedef enum {
 
 typedef enum {
 	SENSOR_ACTIVE = 0x01,
-	SENSOR_DEACTIVE
+	SENSOR_DEACTIVE,
+	SENSOR_READY
 }sensor_state_t;
 
 typedef enum {

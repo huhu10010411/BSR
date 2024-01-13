@@ -34,20 +34,22 @@ typedef enum
 /* GLOBAL FUNCTION PROTOTYPES ------------------------------------------------*/
 void Screen_Init(_RTC *myRTC);
 
-void Screen_Home_Origin(uint8_t ID);
+void Screen_Home_Origin(uint8_t ID, uint8_t connectflag);
 void Screen_Home_Sync(uint8_t time);
 void Screen_Home_Calib(void);
 void Screen_Monitor_Station(uint8_t mode, uint16_t current);
 void Screen_Monitor_Node(uint8_t ID, uint8_t mode, uint16_t battery, uint8_t type, uint16_t voltage);
 void Screen_Function(uint8_t position);
-void Screen_Voltage_Control(uint8_t limit);
+void Screen_Voltage_Control(uint8_t limit , uint8_t ValorDir);
+void Screen_Dir_Control(uint8_t limit);
+void Screen_StepVal_Control(uint8_t limit);
 void Screen_Control_Relay(uint8_t position);
 void Screen_Accept_Relay(_RTC switchtime, uint8_t status);
 void Screen_Test(uint8_t button);
 
 void Screen_Home_Sync_Set_Countdown(uint8_t time);
-void Screen_Voltage_Control_Control_Motor(uint16_t step);
-void Screen_Control_Relay_Change_Mode(uint8_t status);
+void Screen_Voltage_Control_Control_Motor(uint16_t step, uint8_t dir);
+void Screen_Control_Relay_Change_Mode(uint8_t curStatus, uint8_t status);
 #endif /*USER_APP_INC_USER_SCREEN_H_*/
 
 /* End of file ----------------------------------------------------------------*/

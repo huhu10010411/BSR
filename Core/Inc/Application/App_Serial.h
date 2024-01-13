@@ -9,9 +9,8 @@
 #define INC_APPLICATION_APP_SERIAL_C_
 
 #include "stm32f1xx.h"
-#include "main.h"
 
-void init_App_Serial (Station_t *station);
+void init_App_Serial ();
 
 void processApp_Serial(void);
 

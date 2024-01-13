@@ -1,2 +1,2 @@
-../Core/Src/Application/App_Serial.c:15:6:init_App_Serial	16	static
-../Core/Src/Application/App_Serial.c:21:6:processApp_Serial	8	static
+../Core/Src/Application/App_Serial.c:16:6:init_App_Serial	8	static
+../Core/Src/Application/App_Serial.c:22:6:processApp_Serial	8	static

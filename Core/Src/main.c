@@ -35,10 +35,10 @@
 //#include "MQTT.h"
 //#include <stdlib.h>
 //#include <time.h>
-#include "ds3231.h"
+//#include "ds3231.h"
 //#include "ServerMessage.h"
 //#include "stationCMD.h"
-#include "Serial_log.h"
+//#include "Serial_log.h"
 //#include "crc32.h"
 #include "App_Serial.h"
 
@@ -47,9 +47,9 @@
 #include "Task.h"
 #include "App_MCU.h"
 #include "App_SMS.h"
-#include "user_lcd1604.h"
+//#include "user_lcd1604.h"
 #include "button.h"
-#include "Contactor.h"
+//#include "Contactor.h"
 
 #include "App_Display.h"
 #include "App_MBA_stepmor.h"
@@ -80,7 +80,7 @@
 
 
 SIM_t mySIM;
-SMS_t mySMS= {0};
+SMS_t mySMS;
 
 
 uint8_t isDataAvailable_CFG =0;
@@ -126,7 +126,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 		Serial_CFG_Callback(Size);
 	}
 
-	if (huart->Instance == __LORA_UART->Instance) {
+	if (huart->Instance == USART3) {
 		Lora_callback(Size);
 	}
 }
@@ -172,7 +172,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		// Button Limit MIN handler
 		SW_LIMIT_MIN_handler();
 	}
-
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
@@ -277,36 +276,38 @@ int main(void)
 	initApp_MBA_stepmor();
 	// Lora
 //	initLora(&huart2, &hdma_usart2_rx);
-//	initmyLora(&huart3, &hdma_usart3_rx, &myStation);
+	initmyLora();
 	// GPS
 	myGPS.getFlag = 0;
 	initGPS(&myStation, &myRTC);
 
-	initSIM(&huart1, &hdma_usart1_rx, &mySIM);
+	initSIM();
 
 	// Init Serial log
 //	init_Serial_log(&huart2);
 
 	// Init MQTT app
-	initApp_MQTT(&myStation, &mySIM);
+	initApp_MQTT();
 
-	initApp_MCU(&myStation, &mySIM);
+//	initApp_MCU(&mySIM);
 
 	initApp_SMS(&mySIM.sms);
 
-	init_App_Serial(&myStation);
+	init_App_Serial();
 
 	// Init RTC module (DS3231)
 	DS3231_Init(&hi2c1);
 
-	LCD_Init();
-
-	initButton(&myDisplayMode, myStation.ssNode_list, &myStation.stepPosition);
 
 
-	initApp_Display(&myDisplayMode, &myRTC, &myStation);
+	initButton(&myDisplayMode);
 
 
+	initApp_Display(&myDisplayMode, &myRTC);
+
+	//	__MY_DISPLAY_MODE = displaymode;
+	//	__MY_SS_LIST = mylist;
+	//	__MY_STATION = myStation;
 
 //DS3231_GetTime(&myRTC);
 //	myRTC.Year = 24;
@@ -340,7 +341,7 @@ int main(void)
 	  processingApp_display();
 	  processingApp_MBA_stepmor();
 
-//	  processApp_SMS();
+	  processApp_SMS();
 //	  LCD_PrintNumber(5);
 //	  processing_CMD(&myStation.stID);
 //	  testSynchronize();
@@ -405,7 +406,7 @@ void SystemClock_Config(void)
 static void currentConvert(uint32_t volatile *adcval)
 {
 	if (adccount == 1000)	{
-		myStation.stCurrent = (uint16_t)((*adcval)*3/4095) + 50;
+		myStation.stCurrent = (uint16_t)( ( ( (*adcval)*3/4095) + 50)/6);
 		*adcval = 0;
 		adccount = 0;
 	}

@@ -36,6 +36,20 @@ void Step_setDir(Stepmotor_dir_t dir)
 	step_dir = dir;
 }
 
+void Step_toggleDir()
+{
+	switch (Step_getDir())	{
+	case STEPM_DIR_INC:
+		Step_setDir(STEPM_DIR_DEC);
+		break;
+	case STEPM_DIR_DEC:
+		Step_setDir(STEPM_DIR_INC);
+		break;
+	default:
+		break;
+	}
+}
+
 void increaseStepchange()
 {
 	if (stepChange >= MAX_STEP )	{
@@ -60,7 +74,10 @@ uint16_t getStepchange()
 {
 	return stepChange;
 }
-
+void Step_setStepChange(uint16_t value)
+{
+	stepChange = value;
+}
 uint8_t Step_getPercentChange()
 {
 	return steppercentChange;
@@ -83,11 +100,22 @@ Stepmotor_change_mode_t Step_getChangemode()
 
 void Step_step()
 {
-	A4988_StepByStep(getStepchange(), (uint8_t)Step_getDir() );
+	uint8_t dir = Step_getDir();
+	if (HAL_GPIO_ReadPin(LIMIT_SWITCH_MAX_GPIO_Port, LIMIT_SWITCH_MAX_Pin) == 0 && dir == STEPM_DIR_INC )	return ;
+	if (HAL_GPIO_ReadPin(LIMIT_SWITCH_MIN_GPIO_Port, LIMIT_SWITCH_MIN_Pin) == 0 && dir == STEPM_DIR_DEC )  return;
+	A4988_EnableDriver();
+	A4988_StepByStep(getStepchange(), dir );
+	A4988_DisableDriver();
+
 }
 
 void Step_percent()
 {
+	uint8_t dir = Step_getDir();
+	if (HAL_GPIO_ReadPin(LIMIT_SWITCH_MAX_GPIO_Port, LIMIT_SWITCH_MAX_Pin) == 0 && dir == STEPM_DIR_INC )	return ;
+	if (HAL_GPIO_ReadPin(LIMIT_SWITCH_MIN_GPIO_Port, LIMIT_SWITCH_MIN_Pin) && dir == STEPM_DIR_DEC )  return;
 	uint16_t stepChange = (uint16_t)(Step_getPercentChange() * MAX_STEP / 100);
-	A4988_StepByStep(stepChange, Step_getDir());
+	A4988_EnableDriver();
+	A4988_StepByStep(stepChange, dir);
+	A4988_DisableDriver();
 }

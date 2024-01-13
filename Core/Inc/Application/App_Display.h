@@ -18,7 +18,9 @@ typedef enum	{
 	MENU_CONTROL,
 	VOLTAGE_CONTROL,
 	ON_OFF_CONTROL,
-	COMPLETE_CONTROL
+	COMPLETE_CONTROL,
+	STEP_VAL_CONTROL,
+	STEP_DIR_CONTROL
 }DISPLAY_MODE_t;
 
 typedef enum {
@@ -32,8 +34,14 @@ typedef enum {
 	SW_ON
 }SWITCH_t;
 
+typedef enum {
+	STEP_VAL,
+	STEP_DIR,
+	STEP_CONFIRM
+}STEP_t;
 
-void initApp_Display (DISPLAY_MODE_t *myDisplayMode, _RTC *myRTC, Station_t *myStation);
+
+void initApp_Display (DISPLAY_MODE_t *myDisplayMode, _RTC *myRTC);
 
 void processingApp_display();
 

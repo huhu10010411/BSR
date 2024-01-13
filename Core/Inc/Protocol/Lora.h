@@ -18,11 +18,11 @@
 
 #define START_VALUE		1
 
-extern UART_HandleTypeDef *__LORA_UART;
+//extern UART_HandleTypeDef *__LORA_UART;
 
-void initLora(UART_HandleTypeDef *huart, DMA_HandleTypeDef *hdma);
+void initLora();
 
-void initmyLora(UART_HandleTypeDef *huart, DMA_HandleTypeDef *hdma, Station_t *myStation);
+void initmyLora();
 
 void enableReceiveDMAtoIdle_Lora(void);
 

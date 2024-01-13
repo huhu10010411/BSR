@@ -10,31 +10,33 @@
 #include "ds3231.h"
 #include "Serial_CFG.h"
 #include "Task.h"
+#include "main.h"
+#include "Lora.h"
+#include "ServerMessage.h"
 
-static Station_t *__MY_STATION_MCU;
-static SIM_t *__MY_SIM_MCU;
+//static SIM_t *mySIM;
 
 
 uint32_t tick = 0;
+uint32_t NWRDtick = 0;
 
-void initApp_MCU(Station_t *station, SIM_t *mySIM)
+void initApp_MCU()
 {
-	__MY_STATION_MCU = station;
-	__MY_SIM_MCU = mySIM;
+//	mySIM = mySIM;
 }
 
-uint8_t countNUMBofactiveSensor()
-{
-	uint8_t count = 0;
-	Node * current =__MY_STATION_MCU->ssNode_list->head->next;
-		while (current != __MY_STATION_MCU->ssNode_list->tail)	{
-			if (current->SSnode.Sensor_state == SENSOR_ACTIVE ) 	{
-				count++;
-			}
-			current = current->next;
-		}
-	return count;
-}
+//uint8_t countNUMBofactiveSensor()
+//{
+//	uint8_t count = 0;
+//	Node * current =myStation.ssNode_list->head->next;
+//		while (current != myStation.ssNode_list->tail)	{
+//			if (current->SSnode.Sensor_state == SENSOR_ACTIVE ) 	{
+//				count++;
+//			}
+//			current = current->next;
+//		}
+//	return count;
+//}
 void processApp_MCU(void)
 {
 		/*Check for task*/
@@ -44,15 +46,18 @@ void processApp_MCU(void)
 			triggerTaskflag(TASK_GET_GPS_TIME, FLAG_EN);
 
 			// Send WAKEUP command for Sensor
-//			Lora_Setmode(WAKE);
-			//Check for sensor Ready
-
+			Lora_Setmode(WAKE);
+			// Start timer 100s
+			NWRDtick = HAL_GetTick();
 			// Trigger send NETWORK READY message to Server
 			triggerTaskflag(TASK_SEND_NWREADY, FLAG_EN);
 
 			triggerTaskflag(TASK_PREPARE_CALIB, FLAG_DIS);
 		}
 
+		if ((HAL_GetTick() - NWRDtick > 100000) && checkTaskflag(TASK_SEND_NWREADY))	{
+			sendData2Server(DATA_NETWREADY);
+		}
 		// Calibration Mode
 		if (checkStationMode() == STATION_MODE_CALIB)	{
 			if( checkTaskflag(TASK_START_CALIB) ) {

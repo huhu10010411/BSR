@@ -11,20 +11,24 @@
 #include "Validation.h"
 #include "linkedlist.h"
 #include "String_process.h"
-#include "Serial_log.h"
+//#include "Serial_log.h"
+#include  "usart.h"
+#include "main.h"
 
+#define __LORA_UART 		&huart3
+#define __LORA_DMA_UART 	&hdma_usart3_rx
 
 #define LORARXBUFF_MAXLEN		128
-#define LORABUFF_MAXLEN			256
+#define LORABUFF_MAXLEN			128
 #define LORATXBUFF_MAXLEN		100
 
 #define LORA_TIMEOUT		0xFFFF
 
-UART_HandleTypeDef *__LORA_UART;
-DMA_HandleTypeDef *__LORA_DMA_UART;
+//UART_HandleTypeDef *__LORA_UART;
+//DMA_HandleTypeDef *__LORA_DMA_UART;
 
 
-static Station_t *__MY_STATION;
+//static Station_t *myStation;
 
 uint8_t LoraRxbuff[LORARXBUFF_MAXLEN];
 uint8_t Lorabuff[LORABUFF_MAXLEN];
@@ -33,17 +37,17 @@ uint8_t LoraTxbuff[LORATXBUFF_MAXLEN];
 static uint16_t head = 0, tail = 0;
 uint8_t isOK = 0;
 
-void initLora(UART_HandleTypeDef *huart, DMA_HandleTypeDef *hdma)
+void initLora()
 {
-	__LORA_UART = huart;
-	__LORA_DMA_UART = hdma;
+//	__LORA_UART = huart;
+//	__LORA_DMA_UART = hdma;
 	enableReceiveDMAtoIdle_Lora();
 }
 
-void initmyLora(UART_HandleTypeDef *huart, DMA_HandleTypeDef *hdma, Station_t *myStation)
+void initmyLora()
 {
-	initLora(huart, hdma);
-	__MY_STATION = myStation;
+//	initLora(huart, hdma);
+//	myStation = myStation;
 }
 void enableReceiveDMAtoIdle_Lora(void)
 {
@@ -106,8 +110,8 @@ void MarkAsReadData_LORA(void)
 
 bool isIDExist (uint8_t ID)
 {
-	Node * current = __MY_STATION->ssNode_list->head->next;
-	while (current != __MY_STATION->ssNode_list->tail)
+	Node * current = myStation.ssNode_list->head->next;
+	while (current != myStation.ssNode_list->tail)
 	{
 		if ( ID == current->SSnode.SSnode_ID)	return true;
 		current = current->next;
@@ -192,12 +196,12 @@ void Lora_receive(uint8_t *Msg, uint8_t msglen)
 		default:
 			break;
 		}
-		list_append(__MY_STATION->ssNode_list, newSensor);
+		list_append(myStation.ssNode_list, newSensor);
 	}
 	// If Sensor ID is already saved in the Sensor node list
 	else {
-		Node * current = __MY_STATION->ssNode_list->head->next;
-		while (current != __MY_STATION->ssNode_list->tail)	{
+		Node * current = myStation.ssNode_list->head->next;
+		while (current != myStation.ssNode_list->tail)	{
 			if (current->SSnode.SSnode_ID == id) {
 				switch (flag)	{
 				case 1:
@@ -239,7 +243,7 @@ void testLora_receive (void)
 	uint8_t modemsg [] = {0x01, 0x04, 0x53,0x30, 0x39, 0x31, 0x04, 0x01, 0x00, 0x00, 0xD6};
 //	uint8_t msg[] = { 0x01, 0x04, 0x53, 0x30, 0x39, 0x31, 0x07, 0x02, 0x05, 0xD6, 0x09, 0x02, 0x02, 0xF4, 0x00, 0x64};
 	Lora_receive(modemsg, 20);
-	Serial_log_number(__MY_STATION->stID);
+//	Serial_log_number(myStation->stID);
 }
 
 

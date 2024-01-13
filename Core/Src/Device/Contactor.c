@@ -23,5 +23,6 @@ MBA_state_t switchContactor (MBA_state_t ONofOFF)
 		break;
 	}
 	// send MBA status to Server
+	triggerTaskflag(TASK_SEND_MBA_STATUS, FLAG_EN);
 	return ONofOFF;
 }

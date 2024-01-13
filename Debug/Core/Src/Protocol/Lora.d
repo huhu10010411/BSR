@@ -32,8 +32,7 @@ Core/Src/Protocol/Lora.o: ../Core/Src/Protocol/Lora.c \
  D:/blue_pill_pj/Station/Core/Inc/Device/SIM.h \
  D:/blue_pill_pj/Station/Core/Inc/Device/Contactor.h \
  ../Core/Inc/Validation.h ../Core/Inc/linkedlist.h \
- ../Core/Inc/String_process.h \
- D:/blue_pill_pj/Station/Core/Inc/Communication/Serial_log.h
+ ../Core/Inc/String_process.h ../Core/Inc/usart.h ../Core/Inc/main.h
 D:/blue_pill_pj/Station/Core/Inc/Protocol/Lora.h:
 ../Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f1xx.h:
 ../Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f103xb.h:
@@ -70,4 +69,5 @@ D:/blue_pill_pj/Station/Core/Inc/Device/Contactor.h:
 ../Core/Inc/Validation.h:
 ../Core/Inc/linkedlist.h:
 ../Core/Inc/String_process.h:
-D:/blue_pill_pj/Station/Core/Inc/Communication/Serial_log.h:
+../Core/Inc/usart.h:
+../Core/Inc/main.h:

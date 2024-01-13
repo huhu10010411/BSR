@@ -6,26 +6,32 @@
  */
 
 #include "MQTT.h"
-#include "SIM.h"
+//#include "SIM.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "Serial_log.h"
+//#include "Serial_log.h"
 #include "String_process.h"
 #include "usart.h"
+#include "main.h"
 
-#define MQTT_TXBUFF_SIZE   1024
 
-SIM_t *__MY_SIM;
+#define MQTT_TXBUFF_SIZE   512
+
+//static SIM_t *mySIM;
 
 uint8_t MQTT_Txbuff [MQTT_TXBUFF_SIZE];
 
 
-void init_MQTT(SIM_t *SIM)
+void init_MQTT()
 {
-	__MY_SIM = SIM;
+//	mySIM = SIM;
 }
 
+uint8_t MQTT_getConnectflag()
+{
+	return mySIM.mqttServer.connect;
+}
 uint8_t SumofOccurances(uint8_t * word, uint8_t *buffer, uint16_t buffer_size)
 {
 	uint8_t sum =0;
@@ -98,38 +104,38 @@ uint8_t MQTT_receiveGetTopicandPayloadLength( uint8_t *MQTTbuff, uint16_t buffsi
 	uint16_t remainlen = getRemainsize(currentPos, MQTTbuff, buffsize);
 
 	getBetween( (uint8_t*)",", (uint8_t*)",", currentPos, remainlen, topiclen_buff);
-	__MY_SIM->mqttReceive.topicLen = atoi( (char*)topiclen_buff );
+	mySIM.mqttReceive.topicLen = atoi( (char*)topiclen_buff );
 
 	currentPos = isWordinBuff(currentPos, remainlen,(uint8_t*)",");
 	currentPos ++;
 
 	getBetween( (uint8_t*)",", (uint8_t*)"\r", currentPos, remainlen, payloadlen_buff);
-	__MY_SIM->mqttReceive.payloadLen = atoi( (char*)payloadlen_buff );
+	mySIM.mqttReceive.payloadLen = atoi( (char*)payloadlen_buff );
 
 	return 1;
 }
 
 uint8_t MQTT_receiveGetTopic (uint8_t *MQTTbuff,uint16_t buffsize)
 {
-	return getContent(CONTENT_TOPIC, MQTTbuff, buffsize, __MY_SIM->mqttReceive.topic, __MY_SIM->mqttReceive.topicLen);
+	return getContent(CONTENT_TOPIC, MQTTbuff, buffsize, mySIM.mqttReceive.topic, mySIM.mqttReceive.topicLen);
 }
 
 uint8_t MQTT_receiveGetPayload (uint8_t *MQTTbuff,uint16_t buffsize)
 {
-	return getContent(CONTENT_PAYLOAD, MQTTbuff, buffsize, __MY_SIM->mqttReceive.payload, __MY_SIM->mqttReceive.payloadLen);
+	return getContent(CONTENT_PAYLOAD, MQTTbuff, buffsize, mySIM.mqttReceive.payload, mySIM.mqttReceive.payloadLen);
 }
 uint8_t MQTT_receive(uint8_t *MQTTbuff,uint16_t buffsize)
 {
 	if ( !MQTT_receiveGetTopicandPayloadLength(MQTTbuff, buffsize) ) return 0;
 
-	memset( __MY_SIM->mqttReceive.payload, 0, MAX_PAYLOAD_LEN );
-	memset( __MY_SIM->mqttReceive.topic, 0, MAX_TOPIC_LEN );
+	memset( mySIM.mqttReceive.payload, 0, MAX_PAYLOAD_LEN );
+	memset( mySIM.mqttReceive.topic, 0, MAX_TOPIC_LEN );
 
 	if (! MQTT_receiveGetTopic(MQTTbuff, buffsize))		return 0;
 
 	if (! MQTT_receiveGetPayload(MQTTbuff, buffsize))	return 0;
 
-	__MY_SIM->mqttReceive.newEvent = 1;
+	mySIM.mqttReceive.newEvent = 1;
 	return 1;
 }
 
@@ -137,12 +143,12 @@ uint8_t MQTT_connected(void)
 {
 	if ( SIM_sendCMD((uint8_t*)"AT+CMQTTDISC?", (uint8_t*)"+CMQTTDISC: 0,0", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 2000) == SIM_RES_MSG )
 	{
-		__MY_SIM->mqttServer.connect = 1;
-		Serial_log_string("MQTT is connected to broker\r\n");
+		mySIM.mqttServer.connect = 1;
+//		Serial_log_string("MQTT is connected to broker\r\n");
 		return 1;
 	}
-	Serial_log_string("MQTT is disconnected to broker\r\n");
-	__MY_SIM->mqttServer.connect = 0;
+//	Serial_log_string("MQTT is disconnected to broker\r\n");
+	mySIM.mqttServer.connect = 0;
 	return 0;
 }
 
@@ -158,72 +164,72 @@ uint8_t startMQTT(void) {
 
 	uint8_t check = SIM_sendCMD((uint8_t*)"AT+CMQTTSTART", (uint8_t*)"+CMQTTSTART: 0", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 2000);
 	if ( check == SIM_RES_MSG )	{
-		Serial_log_string("start MQTT success\r\n");
+//		Serial_log_string("start MQTT success\r\n");
 		return 1;
 	}
 
 	check = SIM_sendCMD((uint8_t*)"AT+CMQTTSTART", (uint8_t*)"ERROR", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 2000);
 	if ( check == SIM_RES_MSG )	{
-		Serial_log_string("start MQTT success\r\n");
+//		Serial_log_string("start MQTT success\r\n");
 		return 1;
 	}
-	Serial_log_number(check);
-	Serial_log_string("\r\nstart MQTT fail\r\n");
+//	Serial_log_number(check);
+//	Serial_log_string("\r\nstart MQTT fail\r\n");
 	return 0;
 }
 
 uint8_t acquireMQTTclient (uint8_t *clientID){
 	sprintf((char*)MQTT_Txbuff,"AT+CMQTTACCQ=0,\"%s\"", clientID);
 	if (SIM_sendCMD(MQTT_Txbuff, (uint8_t*)"OK", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 1000)== SIM_RES_MSG)	{
-		Serial_log_string("acquire MQTT client success\r\n");
+//		Serial_log_string("acquire MQTT client success\r\n");
 		return 1;
 	}
-	Serial_log_string("acquire MQTT client fail\r\n");
+//	Serial_log_string("acquire MQTT client fail\r\n");
     return 0;
 }
 uint8_t releaseMQTTclient (void)
 {
 	if (SIM_sendCMD((uint8_t*)"AT+CMQTTREL=0", (uint8_t*)"OK", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 2000)) {
-		Serial_log_string("release MQTT client success\r\n");
+//		Serial_log_string("release MQTT client success\r\n");
 		return 1;
 	}
-	Serial_log_string("release MQTT client fail\r\n");
+//	Serial_log_string("release MQTT client fail\r\n");
 	return 0;
 }
 uint8_t configureMQTT() {
     // Implement MQTT configuration logic
     // Return 1 on success, 0 on failure
-	uint8_t wtplen = strlen(__MY_SIM->mqttServer.willtopic);
+	uint8_t wtplen = strlen(mySIM.mqttServer.willtopic);
 	sprintf((char*)MQTT_Txbuff,"AT+CMQTTWILLTOPIC=0,%d",wtplen);
 	if (SIM_sendCMD(MQTT_Txbuff, (uint8_t*)'>', ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 2000) != SIM_RES_MSG)	return 0;
 
-	sprintf((char*)MQTT_Txbuff,"%s",__MY_SIM->mqttServer.willtopic);
+	sprintf((char*)MQTT_Txbuff,"%s",mySIM.mqttServer.willtopic);
 	if (SIM_sendCMD(MQTT_Txbuff, (uint8_t*)"OK", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 1000) != SIM_RES_MSG)	return 0;
 
-	uint8_t wmsglen = strlen((char*)__MY_SIM->mqttServer.willmsg);
+	uint8_t wmsglen = strlen((char*)mySIM.mqttServer.willmsg);
 	sprintf((char*)MQTT_Txbuff,"AT+CMQTTWILLMSG=0,%d,1",wmsglen);
 	if (SIM_sendCMD(MQTT_Txbuff, (uint8_t*)'>', ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 2000)!= SIM_RES_MSG)	return 0;
 
-	sprintf((char*)MQTT_Txbuff,"%s",__MY_SIM->mqttServer.willmsg);
+	sprintf((char*)MQTT_Txbuff,"%s",mySIM.mqttServer.willmsg);
 	if (SIM_sendCMD(MQTT_Txbuff, (uint8_t*)"OK", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 2000)!= SIM_RES_MSG)	return 0;
 
 	sprintf((char*)MQTT_Txbuff,"AT+CMQTTCFG=\"checkUTF8\",0,0");
 	if (! SIM_sendCMD(MQTT_Txbuff, (uint8_t*)"OK", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 1000))	return 0;
 
-	Serial_log_string("config MQTT success\r\n");
+//	Serial_log_string("config MQTT success\r\n");
     return 1;
 }
 
 uint8_t sendConnectMessage() {
     // Implement sending the CONNECT message
     // Return 1 on success, 0 on failure
-	sprintf((char*)MQTT_Txbuff,"AT+CMQTTCONNECT=0,\"%s:%d\",%d,1",__MY_SIM->mqttServer.host,__MY_SIM->mqttServer.port,__MY_SIM->mqttClient.keepAliveInterval);
+	sprintf((char*)MQTT_Txbuff,"AT+CMQTTCONNECT=0,\"%s:%d\",%d,1",mySIM.mqttServer.host,mySIM.mqttServer.port,mySIM.mqttClient.keepAliveInterval);
 	if (SIM_sendCMD(MQTT_Txbuff, (uint8_t*)"+CMQTTCONNECT: 0,0", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 2000) == SIM_RES_MSG)
 	{
-		Serial_log_string("Connect to broker success\r\n");
+//		Serial_log_string("Connect to broker success\r\n");
 		return 1;
 	}
-	Serial_log_string("Connect to broker fail\r\n");
+//	Serial_log_string("Connect to broker fail\r\n");
     return 0;
 }
 
@@ -236,8 +242,8 @@ uint8_t MQTT_checkNWavailable (void)
 			tick = HAL_GetTick();
 			SIM_sendCMD( (uint8_t*)"AT+CRESET", (uint8_t*)"OK", ENABLE_SIM_CHECKRES,
 						ENABLE_MARKASREAD, SIM_TIMEOUT_LONG);
-			Serial_log_string("Reset Module\r\n");
-			HAL_Delay(5000);
+//			Serial_log_string("Reset Module\r\n");
+			HAL_Delay(1000);
 		}
 		return 1;
 	}
@@ -262,7 +268,7 @@ uint8_t MQTT_connect()
 
 	if ( !startMQTT() )		return 0;
 
-	if ( !acquireMQTTclient( (uint8_t*)__MY_SIM->mqttClient.clientID) )
+	if ( !acquireMQTTclient( (uint8_t*)mySIM.mqttClient.clientID) )
 	{
 		if (MQTT_connected())
 		{
@@ -277,11 +283,11 @@ uint8_t MQTT_connect()
 	if ( !(configureMQTT()) )		return 0;
 
 	if ( !sendConnectMessage() )	{
-		HAL_Delay(500);
+		HAL_Delay(200);
 		return 0;
 	}
 
-	__MY_SIM->mqttServer.connect = 1;
+	mySIM.mqttServer.connect = 1;
 	return 1;
 
 }
@@ -296,7 +302,7 @@ uint8_t MQTT_disconnect ()
 	if (SIM_sendCMD((uint8_t*)"AT+CMQTTSTOP", (uint8_t*)"+CMQTTSTOP: 0",
 			ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 2000) != SIM_RES_MSG )		return 0;
 
-	__MY_SIM->mqttServer.connect = 0;
+	mySIM.mqttServer.connect = 0;
 	return 1;
 }
 uint8_t MQTT_publish(uint8_t *topic, uint8_t *msg, uint16_t msglen)

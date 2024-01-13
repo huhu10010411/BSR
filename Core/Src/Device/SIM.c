@@ -14,17 +14,22 @@
 #include "String_process.h"
 #include "Validation.h"
 #include "Task.h"
+#include "main.h"
+#include "usart.h"
+
+
+#define SIM_UART		&huart1
+#define SIM_DMA_UART	&hdma_usart1_rx
 
 #define SIM_BUFF_SIZE        512
-#define SIM_RXBUFF_SIZE      256
-#define SIM_SMS_RXSIZE       256
+#define SIM_RXBUFF_SIZE      150
+#define SIM_SMS_RXSIZE       150
 
 
-//#define SMS_CMD_STA			"SMSCMD STATE"
-//#define SMS_CMD_CALIB		"SMSCMD CALIB"
-UART_HandleTypeDef *__SIM_UART;
-DMA_HandleTypeDef  *__SIM_DMA_UART;
-SIM_t	*__SIM;
+
+//UART_HandleTypeDef *SIM_UART;
+//DMA_HandleTypeDef  *SIM_DMA_UART;
+//SIM_t	*mySIM;
 
 uint16_t oldPos =0, newPos =0;
 uint8_t SIMbuff[SIM_BUFF_SIZE];
@@ -34,27 +39,23 @@ uint8_t SMS_Rxbuff [SIM_SMS_RXSIZE];
 uint8_t MQTT_Rxbuff [MQTT_RXBUFF_SIZE];
 uint16_t head =0, tail=0;
 uint16_t mqtttail=0, mqtthead= 0;
-volatile uint8_t newSMS = 0;
-volatile uint8_t newMQTTmsg =0;
-uint8_t newMQTTmsgReceiving=0;
+
+static volatile uint8_t newSMS = 0;
 
 uint8_t getSMS = 0;
 uint16_t SMS_len = 0;
 
 
 
-void initSIM(UART_HandleTypeDef *huart, DMA_HandleTypeDef  *hdma , SIM_t *mySIM)
+void initSIM()
 {
-	__SIM = mySIM;
-	__SIM_UART = huart;
-	__SIM_DMA_UART = hdma;
 	enableReceiveDMAtoIdle_SIM();
 //	SIM_sendCMD((uint8_t*)"ATE0",(uint8_t*)"OK", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 1000);
 }
 void enableReceiveDMAtoIdle_SIM(void)
 {
-	 HAL_UARTEx_ReceiveToIdle_DMA(__SIM_UART, SIMRxbuff, SIM_RXBUFF_SIZE);
-	  __HAL_DMA_DISABLE_IT(__SIM_DMA_UART,DMA_IT_HT);
+	 HAL_UARTEx_ReceiveToIdle_DMA(SIM_UART, SIMRxbuff, SIM_RXBUFF_SIZE);
+	  __HAL_DMA_DISABLE_IT(SIM_DMA_UART,DMA_IT_HT);
 }
 
 void SIM_callback(uint16_t Size)
@@ -191,8 +192,8 @@ SIM_res_t SIM_sendCMD(uint8_t *cmd, uint8_t *checkResMsg, uint8_t CheckResENorDI
 {
 	uint8_t SIM_Txbuff[100];
 	uint8_t len = sprintf( (char*)SIM_Txbuff, "%s\r\n", cmd);
-	if ( HAL_UART_Transmit(__SIM_UART, SIM_Txbuff, len, 0xFFFF) != HAL_OK )	{
-		Serial_log_string("UART transmit ERROR\r\n");
+	if ( HAL_UART_Transmit(SIM_UART, SIM_Txbuff, len, 0xFFFF) != HAL_OK )	{
+//		Serial_log_string("UART transmit ERROR\r\n");
 	}
 
 	if (CheckResENorDIS == ENABLE_SIM_CHECKRES)
@@ -210,6 +211,65 @@ SIM_res_t SIM_sendCMD(uint8_t *cmd, uint8_t *checkResMsg, uint8_t CheckResENorDI
 	return SIM_NO_RES;
 }
 
+uint8_t SIM_checkCMD (SIM_CMD_t cmd)
+{
+	uint8_t res = 0;
+//	SIM_res_t check;
+	switch (cmd) {
+		case SIM_CMD_SIMCARD_PIN:
+			if ( SIM_sendCMD( (uint8_t*)"AT+CPIN?", (uint8_t*)"+CPIN: READY", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, SIM_TIMEOUT_LONG) == SIM_RES_MSG ) {
+				res = 1;
+//				Serial_log_string("SIM card READY\r\n");
+			}
+			else {
+//				Serial_log_string("SIM card not READY\r\n");
+
+			}
+			break;
+		case SIM_CMD_NW_CPSI:
+			if ( SIM_sendCMD( (uint8_t*)"AT+CPSI?", (uint8_t*)"+CPSI: NO SERVICE", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, SIM_TIMEOUT_LONG) == SIM_RES_MSG ) {
+//				Serial_log_string("NO SERVICE, network status has some problem");
+			}
+			else {
+				res = 1;
+//				Serial_log_string("SERVICE available\r\n");
+			}
+			break;
+		case SIM_CMD_NW_CREG:
+			if ( SIM_sendCMD( (uint8_t*)"AT+CREG?", (uint8_t*)"+CREG: 0,1", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, SIM_TIMEOUT_LONG) == SIM_RES_MSG ) {
+				res = 1;
+//				Serial_log_string("Module is registered to CS domain\r\n");
+			}
+			else {
+//				Serial_log_string("Module is not registered to CS domain, reboot the module\r\n");
+			}
+			break;
+		case SIM_CMD_PACKDOM_CGREG:
+
+			break;
+		case SIM_CMD_STA_CSQ:
+			if ( SIM_sendCMD( (uint8_t*)"AT+CSQ", (uint8_t*)"+CSQ: 99", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, SIM_TIMEOUT_LONG) == SIM_RES_MSG ) {
+//				Serial_log_string("Signal quality is bad, please check SIM card or reboot the module\r\n");
+			}
+			else {
+				res = 1;
+//				Serial_log_string("Signal quality is good\r\n");
+			}
+			break;
+		default :
+			break;
+	}
+	return res;
+}
+
+void SIM_checkOperation(void)
+{
+		 SIM_sendCMD((uint8_t*)"AT+CMGL=\"REC UNREAD\"", (uint8_t*)"OK",
+				 ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 1000);
+
+
+}
+
 void MarkAsReadData_SIM(void)
 {
 	tail = head;
@@ -225,6 +285,22 @@ uint16_t getAfterword(uint8_t *srcBuffer, uint16_t srcBufferlen, uint8_t *word, 
 	memcpy(getBuffer, currPOS, remainlen);
 	return remainlen;
 }
+
+uint16_t stringIDtoHexID (uint8_t *stringIDbuffer, uint8_t *hexIDbuffer, const char *separator, ID_t idtype)
+{
+	uint8_t *token = (uint8_t*)strtok((char*)stringIDbuffer, separator);
+	uint16_t hexbufferlen = 0;
+
+	while (token != NULL)	{
+		uint16_t tmp = atoi((char*)token);
+		if ( validationID(tmp, idtype) )	{
+			hexIDbuffer[hexbufferlen++] = tmp;
+		}
+		token = (uint8_t*)strtok(NULL, separator);
+	}
+	return hexbufferlen;
+}
+
 uint16_t SMS_getindex(uint8_t *SMSbuffer,uint16_t SMS_bufferlen)
 {
 	uint8_t contentbuffer[SMS_bufferlen];
@@ -270,20 +346,7 @@ uint16_t SMS_getContent (uint8_t *SMSbuffer, uint16_t SMS_bufferlen, uint8_t *Co
 
 	return getBetween((uint8_t*)"\n", (uint8_t*)"\r", contentbuffer, contentlen, Content_buffer);
 }
-uint16_t stringIDtoHexID (uint8_t *stringIDbuffer, uint8_t *hexIDbuffer, const char *separator, ID_t idtype)
-{
-	uint8_t *token = (uint8_t*)strtok((char*)stringIDbuffer, separator);
-	uint16_t hexbufferlen = 0;
 
-	while (token != NULL)	{
-		uint16_t tmp = atoi((char*)token);
-		if ( validationID(tmp, idtype) )	{
-			hexIDbuffer[hexbufferlen++] = tmp;
-		}
-		token = (uint8_t*)strtok(NULL, separator);
-	}
-	return hexbufferlen;
-}
 
 
 
@@ -307,46 +370,46 @@ uint8_t SMSaddData(SMS_CMD_t smsCMD, uint8_t *contentbuffer, uint16_t contentlen
 	switch (smsCMD)	{
 		case SMS_CMD_CTRL_ON:
 			Detect_msgType = (uint8_t*)SMS_MSG_CTRL_ON;
-			Detect_Request = &__SIM->sms.CtrlON;
+			Detect_Request = &mySIM.sms.CtrlON;
 			getIDflag = 1;
 			getTimeflag = 1;
 			break;
 		case SMS_CMD_CTRL_OFF:
 			Detect_msgType = (uint8_t*)SMS_MSG_CTRL_OFF;
-			Detect_Request = &__SIM->sms.CtrlOFF;
+			Detect_Request = &mySIM.sms.CtrlOFF;
 			getIDflag = 1;
 			getTimeflag = 1;
 			break;
 		case SMS_CMD_CTRL_DEC:
 			Detect_msgType = (uint8_t*)SMS_MSG_CTRL_DEC;
-			Detect_Request = &__SIM->sms.CtrlDEC;
+			Detect_Request = &mySIM.sms.CtrlDEC;
 			getIDflag = 1;
 			getTimeflag = 1;
 			break;
 		case SMS_CMD_CTRL_INC:
 			Detect_msgType = (uint8_t*)SMS_MSG_CTRL_INC;
-			Detect_Request = &__SIM->sms.CtrlINC;
+			Detect_Request = &mySIM.sms.CtrlINC;
 			getIDflag = 1;
 			getTimeflag = 1;
 			break;
 		case SMS_CMD_CTRL_CALIB:
 			Detect_msgType = (uint8_t*)SMS_MSG_CTRL_CALIB;
-			Detect_Request = &__SIM->sms.CtrlCALIB;
+			Detect_Request = &mySIM.sms.CtrlCALIB;
 			getTimeflag = 1;
 			break;
 		case SMS_CMD_GET_STATUS:
 			Detect_msgType = (uint8_t*)SMS_MSG_GET_STATUS;
-			Detect_Request = &__SIM->sms.GetStatus;
+			Detect_Request = &mySIM.sms.GetStatus;
 			break;
 		case SMS_CMD_GET_STATION:
 			Detect_msgType = (uint8_t*)SMS_MSG_GET_STATION;
-			Detect_Request = &__SIM->sms.GetStation;
+			Detect_Request = &mySIM.sms.GetStation;
 			getIDflag = 1;
 			getSflag = 1;
 			break;
 		case SMS_CMD_GET_SENSOR:
 			Detect_msgType = (uint8_t*)SMS_MSG_GET_SENSOR;
-			Detect_Request = &__SIM->sms.GetSensor;
+			Detect_Request = &mySIM.sms.GetSensor;
 			getIDflag = 1;
 			getSflag = 1;
 			idtype = ID_SENSOR;
@@ -546,84 +609,35 @@ uint8_t processingSMS(void)
 	return 1;
 }
 
-uint8_t SIM_checkCMD (SIM_CMD_t cmd)
-{
-	uint8_t res = 0;
-//	SIM_res_t check;
-	switch (cmd) {
-		case SIM_CMD_SIMCARD_PIN:
-			if ( SIM_sendCMD( (uint8_t*)"AT+CPIN?", (uint8_t*)"+CPIN: READY", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, SIM_TIMEOUT_LONG) == SIM_RES_MSG ) {
-				res = 1;
-				Serial_log_string("SIM card READY\r\n");
-			}
-			else {
-				Serial_log_string("SIM card not READY\r\n");
 
-			}
-			break;
-		case SIM_CMD_NW_CPSI:
-			if ( SIM_sendCMD( (uint8_t*)"AT+CPSI?", (uint8_t*)"+CPSI: NO SERVICE", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, SIM_TIMEOUT_LONG) == SIM_RES_MSG ) {
-				Serial_log_string("NO SERVICE, network status has some problem");
-			}
-			else {
-				res = 1;
-				Serial_log_string("SERVICE available\r\n");
-			}
-			break;
-		case SIM_CMD_NW_CREG:
-			if ( SIM_sendCMD( (uint8_t*)"AT+CREG?", (uint8_t*)"+CREG: 0,1", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, SIM_TIMEOUT_LONG) == SIM_RES_MSG ) {
-				res = 1;
-				Serial_log_string("Module is registered to CS domain\r\n");
-			}
-			else {
-				Serial_log_string("Module is not registered to CS domain, reboot the module\r\n");
-			}
-			break;
-		case SIM_CMD_PACKDOM_CGREG:
-
-			break;
-		case SIM_CMD_STA_CSQ:
-			if ( SIM_sendCMD( (uint8_t*)"AT+CSQ", (uint8_t*)"+CSQ: 99", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, SIM_TIMEOUT_LONG) == SIM_RES_MSG ) {
-				Serial_log_string("Signal quality is bad, please check SIM card or reboot the module\r\n");
-			}
-			else {
-				res = 1;
-				Serial_log_string("Signal quality is good\r\n");
-			}
-			break;
-		default :
-			break;
-	}
-	return res;
-}
 
 bool checkSMSrequest (SMS_CMD_t smsCMD)
 {
 	bool res = false;
 	switch (smsCMD)	{
 		case SMS_CMD_CTRL_ON:
-			res = __SIM->sms.CtrlON.requestflag ;
+			res = mySIM.sms.CtrlON.requestflag ;
 			break;
 		case SMS_CMD_CTRL_OFF:
-			res = __SIM->sms.CtrlOFF.requestflag ;
+			res = mySIM.sms.CtrlOFF.requestflag ;
 			break;
 		case SMS_CMD_CTRL_DEC:
-			res = __SIM->sms.CtrlDEC.requestflag ;
+			res = mySIM.sms.CtrlDEC.requestflag ;
 			break;
 		case SMS_CMD_CTRL_INC:
-			res = __SIM->sms.CtrlINC.requestflag ;
+			res = mySIM.sms.CtrlINC.requestflag ;
 			break;
 		case SMS_CMD_CTRL_CALIB:
-			res = __SIM->sms.CtrlCALIB.requestflag ;
+			res = mySIM.sms.CtrlCALIB.requestflag ;
 			break;
 		case SMS_CMD_GET_STATUS:
-			res = __SIM->sms.GetStatus.requestflag ;
+			res = mySIM.sms.GetStatus.requestflag ;
 			break;
 		case SMS_CMD_GET_STATION:
-			res = __SIM->sms.GetStation.requestflag ;
+			res = mySIM.sms.GetStation.requestflag ;
 			break;
 		case SMS_CMD_GET_SENSOR:
-			res = __SIM->sms.GetSensor.requestflag ;
+			res = mySIM.sms.GetSensor.requestflag ;
 			break;
 		default:
 			break;
@@ -635,28 +649,28 @@ void triggerSMSrequest (SMS_CMD_t smsCMD, SMS_CMD_FLAG_t ENorDIS)
 {
 	switch (smsCMD)	{
 	case SMS_CMD_CTRL_ON:
-		__SIM->sms.CtrlON.requestflag = ENorDIS;
+		mySIM.sms.CtrlON.requestflag = ENorDIS;
 		break;
 	case SMS_CMD_CTRL_OFF:
-		__SIM->sms.CtrlOFF.requestflag = ENorDIS;
+		mySIM.sms.CtrlOFF.requestflag = ENorDIS;
 		break;
 	case SMS_CMD_CTRL_DEC:
-		__SIM->sms.CtrlDEC.requestflag = ENorDIS;
+		mySIM.sms.CtrlDEC.requestflag = ENorDIS;
 		break;
 	case SMS_CMD_CTRL_INC:
-		__SIM->sms.CtrlINC.requestflag = ENorDIS;
+		mySIM.sms.CtrlINC.requestflag = ENorDIS;
 		break;
 	case SMS_CMD_CTRL_CALIB:
-		__SIM->sms.CtrlCALIB.requestflag = ENorDIS;
+		mySIM.sms.CtrlCALIB.requestflag = ENorDIS;
 		break;
 	case SMS_CMD_GET_STATUS:
-		__SIM->sms.GetStatus.requestflag = ENorDIS;
+		mySIM.sms.GetStatus.requestflag = ENorDIS;
 		break;
 	case SMS_CMD_GET_STATION:
-		__SIM->sms.GetStation.requestflag = ENorDIS;
+		mySIM.sms.GetStation.requestflag = ENorDIS;
 		break;
 	case SMS_CMD_GET_SENSOR:
-		__SIM->sms.GetSensor.requestflag = ENorDIS;
+		mySIM.sms.GetSensor.requestflag = ENorDIS;
 		break;
 	default:
 		break;
@@ -668,28 +682,28 @@ bool checkSMSreturn (SMS_CMD_t smsCMD)
 	bool res = false;
 	switch (smsCMD)	{
 		case SMS_CMD_CTRL_ON:
-			res = __SIM->sms.CtrlON.returnflag ;
+			res = mySIM.sms.CtrlON.returnflag ;
 			break;
 		case SMS_CMD_CTRL_OFF:
-			res = __SIM->sms.CtrlOFF.returnflag ;
+			res = mySIM.sms.CtrlOFF.returnflag ;
 			break;
 		case SMS_CMD_CTRL_DEC:
-			res = __SIM->sms.CtrlDEC.returnflag ;
+			res = mySIM.sms.CtrlDEC.returnflag ;
 			break;
 		case SMS_CMD_CTRL_INC:
-			res = __SIM->sms.CtrlINC.returnflag ;
+			res = mySIM.sms.CtrlINC.returnflag ;
 			break;
 		case SMS_CMD_CTRL_CALIB:
-			res = __SIM->sms.CtrlCALIB.returnflag ;
+			res = mySIM.sms.CtrlCALIB.returnflag ;
 			break;
 		case SMS_CMD_GET_STATUS:
-			res = __SIM->sms.GetStatus.returnflag ;
+			res = mySIM.sms.GetStatus.returnflag ;
 			break;
 		case SMS_CMD_GET_STATION:
-			res = __SIM->sms.GetStation.returnflag ;
+			res = mySIM.sms.GetStation.returnflag ;
 			break;
 		case SMS_CMD_GET_SENSOR:
-			res = __SIM->sms.GetSensor.returnflag ;
+			res = mySIM.sms.GetSensor.returnflag ;
 			break;
 		default:
 			break;
@@ -700,28 +714,28 @@ void triggerSMSreturn (SMS_CMD_t smsCMD, SMS_CMD_FLAG_t ENorDIS)
 {
 	switch (smsCMD)	{
 	case SMS_CMD_CTRL_ON:
-		__SIM->sms.CtrlON.returnflag = ENorDIS;
+		mySIM.sms.CtrlON.returnflag = ENorDIS;
 		break;
 	case SMS_CMD_CTRL_OFF:
-		__SIM->sms.CtrlOFF.returnflag = ENorDIS;
+		mySIM.sms.CtrlOFF.returnflag = ENorDIS;
 		break;
 	case SMS_CMD_CTRL_DEC:
-		__SIM->sms.CtrlDEC.returnflag = ENorDIS;
+		mySIM.sms.CtrlDEC.returnflag = ENorDIS;
 		break;
 	case SMS_CMD_CTRL_INC:
-		__SIM->sms.CtrlINC.returnflag = ENorDIS;
+		mySIM.sms.CtrlINC.returnflag = ENorDIS;
 		break;
 	case SMS_CMD_CTRL_CALIB:
-		__SIM->sms.CtrlCALIB.returnflag = ENorDIS;
+		mySIM.sms.CtrlCALIB.returnflag = ENorDIS;
 		break;
 	case SMS_CMD_GET_STATUS:
-		__SIM->sms.GetStatus.returnflag = ENorDIS;
+		mySIM.sms.GetStatus.returnflag = ENorDIS;
 		break;
 	case SMS_CMD_GET_STATION:
-		__SIM->sms.GetStation.returnflag = ENorDIS;
+		mySIM.sms.GetStation.returnflag = ENorDIS;
 		break;
 	case SMS_CMD_GET_SENSOR:
-		__SIM->sms.GetSensor.returnflag = ENorDIS;
+		mySIM.sms.GetSensor.returnflag = ENorDIS;
 		break;
 	default:
 		break;
@@ -740,36 +754,30 @@ uint8_t SMS_config()
 uint8_t SMS_sendMsg(uint8_t *Msg, uint16_t msglen, uint8_t *phonenumber )
 {
 	if ( !SMS_config() )	return 0;
-	uint8_t SIM_Txbuff[100];
+	uint8_t SIM_Txbuff[128];
 	sprintf((char*)SIM_Txbuff, "AT+CMGS=\"%s\"", phonenumber);
 	if ( SIM_sendCMD(SIM_Txbuff, (uint8_t*)">", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, SIM_TIMEOUT_LONG) != SIM_RES_MSG)	return 0;
 
 	Msg[msglen++] = 0x1A;
-	HAL_UART_Transmit(__SIM_UART, Msg, msglen, 0xFFFF);
+	HAL_UART_Transmit(SIM_UART, Msg, msglen, 0xFFFF);
 	if ( SIM_checkMsg((uint8_t*)"OK", SIM_TIMEOUT_LONG) != SIM_RES_MSG)	{
 		MarkAsReadData_SIM();
 		return 0;
 	}
-//	HAL_UART_Transmit(__SIM_UART, (uint8_t*), Size, Timeout)
+//	HAL_UART_Transmit(SIM_UART, (uint8_t*), Size, Timeout)
 	MarkAsReadData_SIM();
 	return 1;
 }
 
-void SIM_checkOperation(void)
-{
-		 SIM_sendCMD((uint8_t*)"AT+CMGL=\"REC UNREAD\"", (uint8_t*)"OK",
-				 ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 1000);
 
-
-}
 void testSMS(void)
 {
 	uint8_t msg[] = "hi hi hi";
 	SMS_sendMsg(msg, strlen((char*)msg), (uint8_t*)"84332560144");
 //	uint8_t SMSbuff[]= "CTRL+ON:10,2,50,18,100,23:47;";
 //	SMS_checkCMD(SMSbuff, strlen((char*)SMSbuff),(uint8_t*)"84332560144");
-//	Serial_log_number(__SIM->sms.CtrlON.requestflag);
+//	Serial_log_number(mySIM.sms.CtrlON.requestflag);
 //	Serial_log_string(" ");
-//	Serial_log_buffer(__SIM->sms.CtrlON.data, __SIM->sms.CtrlON.datalength);
+//	Serial_log_buffer(mySIM.sms.CtrlON.data, mySIM.sms.CtrlON.datalength);
 //	Serial_log_string(" ");
 }

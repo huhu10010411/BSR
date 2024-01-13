@@ -36,7 +36,8 @@ Core/Src/Application/App_Display.o: ../Core/Src/Application/App_Display.c \
  D:/blue_pill_pj/Station/Core/Inc/Application/App_Display.h \
  ../Core/Inc/main.h D:/blue_pill_pj/Station/Core/Inc/Device/button.h \
  ../Core/Inc/linkedlist.h \
- D:/blue_pill_pj/Station/Core/Inc/Device/Step_motor.h
+ D:/blue_pill_pj/Station/Core/Inc/Device/Step_motor.h \
+ D:/blue_pill_pj/Station/Core/Inc/Protocol/MQTT.h
 ../Core/Inc/user_screen.h:
 ../Core/Inc/user_lcd1604.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h:
@@ -81,3 +82,4 @@ D:/blue_pill_pj/Station/Core/Inc/Application/App_Display.h:
 D:/blue_pill_pj/Station/Core/Inc/Device/button.h:
 ../Core/Inc/linkedlist.h:
 D:/blue_pill_pj/Station/Core/Inc/Device/Step_motor.h:
+D:/blue_pill_pj/Station/Core/Inc/Protocol/MQTT.h:

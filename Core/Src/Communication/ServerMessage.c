@@ -16,20 +16,23 @@
 #include "Task.h"
 #include "String_process.h"
 #include "Validation.h"
+#include "main.h"
 
 
 
-#define PACKBUFF_MAXLEN		1024
-#define DATABUFF_MAXLEN		1024
+#define PACKBUFF_MAXLEN		512
+#define DATABUFF_MAXLEN		512
 uint8_t Pack_buff [PACKBUFF_MAXLEN];
 
-static Station_t *__MY_STATION;
-static SMS_t *__MY_SMS;
+//static Station_t *myStation;
+//static SMS_t *mySIM.sms;
+//static SIM_t *mySIM;
 
-void initServerMsg (Station_t *Station, SMS_t *mySMS)
+void initServerMsg ()
 {
-	__MY_STATION = Station;
-	__MY_SMS = mySMS;
+//	myStation = Station;
+//	mySIM.sms = mySMS;
+//	mySIM = mySIM;
 }
 
 uint32_t buffer2num(uint8_t *buffer)
@@ -77,7 +80,7 @@ uint8_t createPack(PACK_t PackType, DATA_t DataType, CMD_t CMDType )
 	memset(Pack_buff, 0, PACKBUFF_MAXLEN);
 	uint8_t pack_len = 0;
 
-	Pack_buff[pack_len++] = __MY_STATION->stID;
+	Pack_buff[pack_len++] = myStation.stID;
 	Pack_buff[pack_len++] = PackType;
 
 	if ( DataType != DATA_NONE )
@@ -95,8 +98,8 @@ uint16_t Serialize_SSnodedata(uint8_t* Serial_buff, DATA_t dataType)
 {
 
 	uint16_t buff_len = 0;
-	Node * current =__MY_STATION->ssNode_list->head->next;
-	while (current != __MY_STATION->ssNode_list->tail)
+	Node * current =myStation.ssNode_list->head->next;
+	while (current != myStation.ssNode_list->tail)
 	{
 		switch ( dataType ) {
 		case DATA_REGISTER:
@@ -119,7 +122,8 @@ uint16_t Serialize_SSnodedata(uint8_t* Serial_buff, DATA_t dataType)
 				Serial_buff[buff_len++] = current->SSnode.SSnode_ID;
 				memcpy(Serial_buff + buff_len, current->SSnode.dataCalibBuffer, 100);
 				buff_len += 100;
-				current->SSnode.sentDatacalib = 1;
+				current->SSnode.dataCalibAvailable = 0;
+//				current->SSnode.sentDatacalib = 1;
 			}
 			break;
 		case DATA_AFTERCALIB:
@@ -138,36 +142,37 @@ uint8_t Serialize_Stationdata( uint8_t *Buffer, DATA_t dataType)
 	uint8_t buff_len = 0;
 	switch (dataType) {
 		case DATA_REGISTER:
-			Buffer[buff_len++] = __MY_STATION->stID;
-			Buffer[buff_len++] = (uint8_t)( ( __MY_STATION->stCurrent >> 8 ) & 0xFF);
-			Buffer[buff_len++] = (uint8_t)( __MY_STATION->stCurrent & 0xFF );
-			Buffer[buff_len++] = (uint8_t)( ( __MY_STATION->stVoltage >> 8 ) & 0xFF );
-			Buffer[buff_len++] = (uint8_t)( __MY_STATION->stVoltage & 0xFF );
+			Buffer[buff_len++] = myStation.stID;
+			Buffer[buff_len++] = (uint8_t)( ( myStation.stCurrent >> 8 ) & 0xFF);
+			Buffer[buff_len++] = (uint8_t)( myStation.stCurrent & 0xFF );
+			Buffer[buff_len++] = (uint8_t)( ( myStation.stVoltage >> 8 ) & 0xFF );
+			Buffer[buff_len++] = (uint8_t)( myStation.stVoltage & 0xFF );
 			break;
 		case DATA_NETWREADY:
-			Buffer[buff_len++] = __MY_STATION->stID;
+			Buffer[buff_len++] = myStation.stID;
 			Buffer[buff_len++] = (uint8_t) ACTIVE;
 			break;
 		case DATA_PERIOD:
-			Buffer[buff_len++] = __MY_STATION->stID;
-			Buffer[buff_len++] = (uint8_t)( ( __MY_STATION->stCurrent >> 8 ) & 0xFF);
-			Buffer[buff_len++] = (uint8_t)( __MY_STATION->stCurrent & 0xFF );
-			Buffer[buff_len++] = (uint8_t)( ( __MY_STATION->stVoltage >> 8 ) & 0xFF );
-			Buffer[buff_len++] = (uint8_t)( __MY_STATION->stVoltage & 0xFF );
+			Buffer[buff_len++] = myStation.stID;
+			Buffer[buff_len++] = (uint8_t)( ( myStation.stCurrent >> 8 ) & 0xFF);
+			Buffer[buff_len++] = (uint8_t)( myStation.stCurrent & 0xFF );
+			Buffer[buff_len++] = (uint8_t)(myStation.MBAstate);
+//			Buffer[buff_len++] = (uint8_t)( ( myStation.stVoltage >> 8 ) & 0xFF );
+//			Buffer[buff_len++] = (uint8_t)( myStation.stVoltage & 0xFF );
 			break;
 		case DATA_CALIB:
-			Buffer[buff_len++] = __MY_STATION->stID;
-			Buffer[buff_len++] = (uint8_t)( ( __MY_STATION->stCurrent >> 8 ) & 0xFF);
-			Buffer[buff_len++] = (uint8_t)( __MY_STATION->stCurrent & 0xFF );
-			Buffer[buff_len++] = (uint8_t)( ( __MY_STATION->stVoltage >> 8 ) & 0xFF );
-			Buffer[buff_len++] = (uint8_t)( __MY_STATION->stVoltage & 0xFF );
+			Buffer[buff_len++] = myStation.stID;
+			Buffer[buff_len++] = (uint8_t)( ( myStation.stCurrent >> 8 ) & 0xFF);
+			Buffer[buff_len++] = (uint8_t)( myStation.stCurrent & 0xFF );
+			Buffer[buff_len++] = (uint8_t)( ( myStation.stVoltage >> 8 ) & 0xFF );
+			Buffer[buff_len++] = (uint8_t)( myStation.stVoltage & 0xFF );
 			break;
 		case DATA_AFTERCALIB:
-			Buffer[buff_len++] = (uint8_t)( ( __MY_STATION->stCurrent >> 8 ) & 0xFF);
-			Buffer[buff_len++] = (uint8_t)( __MY_STATION->stCurrent & 0xFF );
+			Buffer[buff_len++] = (uint8_t)( ( myStation.stCurrent >> 8 ) & 0xFF);
+			Buffer[buff_len++] = (uint8_t)( myStation.stCurrent & 0xFF );
 			break;
 		case DATA_MBA_STATE:
-			Buffer[buff_len++] = (uint8_t) (__MY_STATION->MBAstate);
+			Buffer[buff_len++] = (uint8_t) (myStation.MBAstate);
 		case DATA_STEP_REACH_LIMIT:
 			Buffer[buff_len++] = (uint8_t)getLimit();
 			break;
@@ -317,10 +322,10 @@ uint8_t sendRespond(CMD_t cmdType, RES_STATUS_t resStatus)
 	Pack_buff[packlen++] = cmdType;
 	switch (cmdType)	{
 	case CMD_CTRL_MBA:
-		Pack_buff[packlen++] = __MY_STATION->MBAstate;
+		Pack_buff[packlen++] = myStation.MBAstate;
 		break;
 	case CMD_CTRL_STEP_MOTOR:
-		twobyte2buff(Pack_buff + packlen, __MY_STATION->stepPosition);
+		twobyte2buff(Pack_buff + packlen, myStation.stepPosition);
 		packlen+= 2;
 		break;
 	default:
@@ -377,13 +382,13 @@ void getDataStatus(uint8_t *Msg, uint16_t Msglen)
 	numbofFailStation = Msg[datapos++];
 	numbofActiveSensor = Msg[datapos++];
 	numbofFailSensor = Msg[datapos++];
-	memset(__MY_SIM->sms.GetStatus.data, 0, SMS_DATA_MAXLEN);
-	uint16_t len = sprintf((char*)__MY_SMS->GetStatus.data,"%s: %d,%s: %d,%s: %d,%s: %d.",
+	memset(mySIM.sms.GetStatus.data, 0, SMS_DATA_MAXLEN);
+	uint16_t len = sprintf((char*)mySIM.sms.GetStatus.data,"%s: %d,%s: %d,%s: %d,%s: %d.",
 			USER_MSG_HEADER_NUMBOF_ACT_STATION, numbofActiveStation,
 			USER_MSG_HEADER_NUMBOF_FAIL_STATION, numbofFailStation,
 			USER_MSG_HEADER_NUMBOF_ACT_SENSOR, numbofActiveSensor,
 			USER_MSG_HEADER_NUMBOF_FAIL_SENSOR, numbofFailSensor);
-	__MY_SMS->GetStatus.datalength = len;
+	mySIM.sms.GetStatus.datalength = len;
 }
 
 ID_t getDatalatest(uint8_t *Msg, uint16_t Msg_len)
@@ -398,21 +403,21 @@ ID_t getDatalatest(uint8_t *Msg, uint16_t Msg_len)
 
 	switch (IDtype){
 	case ID_STATION:
-		__MY_SMS->GetStation.datalength = 0;
+		mySIM.sms.GetStation.datalength = 0;
 		while (datapos < crcpos)
 		{
-			len = sprintf((char*)(__MY_SMS->GetStation.data + __MY_SMS->GetStation.datalength), "I%d:", Msg[datapos]);
-			__MY_SMS->GetStation.datalength += len;
+			len = sprintf((char*)(mySIM.sms.GetStation.data + mySIM.sms.GetStation.datalength), "I%d:", Msg[datapos]);
+			mySIM.sms.GetStation.datalength += len;
 			datapos++;
 			tmpvalue = buff2twobyte(Msg+ datapos);
-			len = sprintf((char*)(__MY_SMS->GetStation.data + __MY_SMS->GetStation.datalength), "%d;", tmpvalue);
-			__MY_SMS->GetStation.datalength += len;
+			len = sprintf((char*)(mySIM.sms.GetStation.data + mySIM.sms.GetStation.datalength), "%d;", tmpvalue);
+			mySIM.sms.GetStation.datalength += len;
 			datapos += 2;
 		}
 		break;
 	case ID_SENSOR:
-		len = sprintf((char*)(__MY_SMS->GetStation.data + __MY_SMS->GetStation.datalength), "V%d:", Msg[datapos]);
-		__MY_SMS->GetStation.datalength += len;
+		len = sprintf((char*)(mySIM.sms.GetStation.data + mySIM.sms.GetStation.datalength), "V%d:", Msg[datapos]);
+		mySIM.sms.GetStation.datalength += len;
 		datapos++;
 		switch (Msg[datapos++])	{
 		case V_p:
@@ -425,8 +430,8 @@ ID_t getDatalatest(uint8_t *Msg, uint16_t Msg_len)
 			break;
 		}
 		tmpvalue = buff2twobyte(Msg+ datapos);
-		len = sprintf((char*)(__MY_SMS->GetStation.data + __MY_SMS->GetStation.datalength), "%d;", tmpvalue);
-		__MY_SMS->GetStation.datalength += len;
+		len = sprintf((char*)(mySIM.sms.GetStation.data + mySIM.sms.GetStation.datalength), "%d;", tmpvalue);
+		mySIM.sms.GetStation.datalength += len;
 		datapos += 2;
 		break;
 	default:
@@ -435,7 +440,7 @@ ID_t getDatalatest(uint8_t *Msg, uint16_t Msg_len)
 	return IDtype;
 }
 
-MBA_state_t getMBAstate(uint8_t *Msg)
+static MBA_state_t getMBAstate(uint8_t *Msg)
 {
 	MBA_state_t res = MBA_NULL;
 	switch (Msg[MBA_STATE_POS])		{
@@ -448,13 +453,35 @@ MBA_state_t getMBAstate(uint8_t *Msg)
 	default:
 		break;
 	}
-	__MY_STATION->MBAstate = res;
+	myStation.MBAstate = res;
 	return res;
+}
+static void  getCtrlStepinfor(uint8_t *Msg)
+{
+	Stepmotor_dir_t dir = Msg[DIR_POS];
+	if (dir < STEPM_DIR_INC && dir > STEPM_DIR_DEFAULT )	return;
+	Stepmotor_change_mode_t changemode = Msg[CHANGE_MODEPOS];
+	if (changemode < STEPM_MODE_PERCENTAGE && changemode > STEPM_MODE_DEFAULT) return;
+	uint8_t valuebuff[3] ;
+	memset(valuebuff, 0, 3);
+	memcpy(valuebuff, Msg + CHANGE_VALUE, 2);
+	uint16_t value = buff2twobyte(valuebuff);
+
+	Step_setDir(dir);
+	Step_setChangeMode(changemode);
+	if (changemode == STEPM_MODE_PERCENTAGE)	{
+		Step_setPercentChange(value);
+	}
+	else {
+		Step_setStepChange(value);
+	}
+
 }
 void markassentDatacalibsuccess(void)
 {
-	Node * current =__MY_STATION->ssNode_list->head->next;
-		while (current != __MY_STATION->ssNode_list->tail)	{
+	Node * current =myStation.ssNode_list->head->next;
+		while (current != myStation.ssNode_list->tail)	{
+
 			if (current->SSnode.sentDatacalib && current->SSnode.dataCalibAvailable) 	{
 				current->SSnode.dataCalibAvailable = 0;
 				current->SSnode.sentDatacalib = 0;
@@ -478,7 +505,7 @@ void processingComingMsg(uint8_t *Msg, uint16_t Msg_len, uint8_t stID)
 
 	switch (packageType) {
 		case PACKT_DATA:
-			// Call the processing data function
+			// Check data type
 			dataType = checkDatatype(Msg);
 			switch (dataType) {
 				case DATA_STATUS:
@@ -522,9 +549,9 @@ void processingComingMsg(uint8_t *Msg, uint16_t Msg_len, uint8_t stID)
 					_RTC tmpRTC;
 					epochtine2RTC(calibtime, &tmpRTC);
 					// Save Calib time
-					__MY_STATION->calibTime.hour = tmpRTC.Hour;
-					__MY_STATION->calibTime.min = tmpRTC.Min;
-					__MY_STATION->calibTime.sec = tmpRTC.Sec;
+					myStation.calibTime.hour = tmpRTC.Hour;
+					myStation.calibTime.min = tmpRTC.Min;
+					myStation.calibTime.sec = tmpRTC.Sec;
 					// Set alarm for Calib
 					DS3231_ClearAlarm1();
 					DS3231_SetAlarm1(ALARM_MODE_ALL_MATCHED, tmpRTC.Date, tmpRTC.Hour, tmpRTC.Min, tmpRTC.Sec);
@@ -536,6 +563,7 @@ void processingComingMsg(uint8_t *Msg, uint16_t Msg_len, uint8_t stID)
 					break;
 				case CMD_CTRL_STEP_MOTOR:
 					//Get data to control step motor
+					getCtrlStepinfor(Msg);
 					triggerTaskflag(TASK_CTRL_STEPMOR, FLAG_EN);
 					break;
 				default:
@@ -559,7 +587,7 @@ void processingComingMsg(uint8_t *Msg, uint16_t Msg_len, uint8_t stID)
 			case DATA_CALIB:
 				if ( Msg[RESSTATUS_POS] == RES_OK)	{
 //					markassentDatacalibsuccess();
-					triggerTaskflag(TASK_SEND_DATACALIB, FLAG_DIS);
+//					triggerTaskflag(TASK_SEND_DATACALIB, FLAG_DIS);
 				}
 				break;
 			case DATA_AFTERCALIB:
@@ -577,12 +605,16 @@ void processingComingMsg(uint8_t *Msg, uint16_t Msg_len, uint8_t stID)
 			switch (cmdType)	{
 			case CMD_CTRL_MBA:
 				if (Msg[RESSTATUS_POS] == RES_OK)	{
-
+					uint8_t len= sprintf((char*)mySIM.sms.CtrlON.data,"Ctrl MBA success");
+					mySIM.sms.CtrlON.datalength = len;
+					triggerSMSreturn(SMS_CMD_CTRL_ON, ENABLE);
 				}
 				break;
 			case CMD_CTRL_STEP_MOTOR:
 				if (Msg[RESSTATUS_POS] == RES_OK)	{
-
+					uint8_t len= sprintf((char*)mySIM.sms.CtrlDEC.data,"Ctrl StepMor success");
+					mySIM.sms.CtrlDEC.datalength = len;
+					triggerSMSreturn(SMS_CMD_CTRL_DEC, ENABLE);
 				}
 				break;
 			default:
@@ -603,7 +635,7 @@ void processingComingMsg(uint8_t *Msg, uint16_t Msg_len, uint8_t stID)
 void testProcessingMsg(void)
 {
 	uint8_t Msg[] = {0x1e, 0xf6, 0x01, 0xdc, 0x18, 0x21, 0xc5};
-	Serial_log_number(__MY_STATION->task.register2server);
+	Serial_log_number(myStation.task.register2server);
 	processingComingMsg(Msg, 7, 0x1e);
-	Serial_log_number(__MY_STATION->task.register2server);
+	Serial_log_number(myStation.task.register2server);
 }

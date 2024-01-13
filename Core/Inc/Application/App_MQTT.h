@@ -10,10 +10,10 @@
 
 
 #include "SIM.h"
-#include "main.h"
+//#include "main.h"
 
 
-void initApp_MQTT(Station_t *station, SIM_t *sim);
+void initApp_MQTT();
 
 void processApp_MQTT(void);
 

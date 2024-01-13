@@ -10,30 +10,35 @@
 #include "App_Display.h"
 #include "button.h"
 #include "Step_motor.h"
+#include "MQTT.h"
+#include "main.h"
 
 static DISPLAY_MODE_t *__MY_DISPLAY_MODE;
 static _RTC *__MY_RTC;
-static Station_t *__MY_STATION;
+//static Station_t *myStation;
 
 static uint16_t countdowntime;
 static _RTC switchtime;
 
-void initApp_Display (DISPLAY_MODE_t *myDisplayMode, _RTC *myRTC, Station_t *myStation)
+void initApp_Display (DISPLAY_MODE_t *myDisplayMode, _RTC *myRTC)
 {
+	LCD_Init();
 	__MY_DISPLAY_MODE = myDisplayMode;
 	__MY_RTC = myRTC;
-	__MY_STATION = myStation;
+//	myStation = myStation;
 	Screen_Init(__MY_RTC);
+
 }
 
 void display_SensorX(uint8_t sensorIndex)
 {
-	if (sensorIndex > __MY_STATION->ssNode_list->length)	{
-		Screen_Monitor_Station(__MY_STATION->stID, __MY_STATION->stCurrent);
+	if (sensorIndex > myStation.ssNode_list->length)	{
+		Screen_Monitor_Station(myStation.stID, myStation.stCurrent);
 		return ;
+
 	}
 
-	Node * current = __MY_STATION->ssNode_list->head;
+	Node * current = myStation.ssNode_list->head;
 	for (uint8_t i = 0; i < sensorIndex; i++)
 	{
 		current = current->next;
@@ -60,11 +65,11 @@ void processingApp_display()
 	}
 	switch(*__MY_DISPLAY_MODE)	{
 		case HOME:
-			Screen_Home_Origin(__MY_STATION->stID);
+			Screen_Home_Origin(myStation.stID, MQTT_getConnectflag());
 			break;
 		case COUNTDOWN_SW_OFF:
-			countdowntime = getCountdowntime(__MY_STATION->calibTime.hour,
-												__MY_STATION->calibTime.min, __MY_STATION->calibTime.sec);
+			countdowntime = getCountdowntime(myStation.calibTime.hour,
+												myStation.calibTime.min, myStation.calibTime.sec);
 			Screen_Home_Sync(countdowntime);
 			break;
 		case AFTER_SW_OFF:
@@ -73,7 +78,7 @@ void processingApp_display()
 		case MONITOR:
 
 			if (get_curMonitor() == 0) 	{
-				Screen_Monitor_Station(__MY_STATION->MBAstate, __MY_STATION->stCurrent);
+				Screen_Monitor_Station(myStation.MBAstate, myStation.stCurrent);
 			}
 			else {
 				display_SensorX(get_curMonitor());
@@ -83,12 +88,20 @@ void processingApp_display()
 			Screen_Function(getcurControl());
 			break;
 		case VOLTAGE_CONTROL:
-			Screen_Voltage_Control(getLimit());
-			Screen_Voltage_Control_Control_Motor(getStepchange());
+			Screen_Voltage_Control(getLimit(), getStepValorDir());
+			Screen_Voltage_Control_Control_Motor(getStepchange(), Step_getDir());
+			break;
+		case STEP_DIR_CONTROL:
+			Screen_Dir_Control(getLimit());
+			Screen_Voltage_Control_Control_Motor(getStepchange(), Step_getDir());
+			break;
+		case STEP_VAL_CONTROL:
+			Screen_StepVal_Control(getLimit());
+			Screen_Voltage_Control_Control_Motor(getStepchange(), Step_getDir());
 			break;
 		case ON_OFF_CONTROL:
 			Screen_Control_Relay(1);
-			Screen_Control_Relay_Change_Mode(getCurswitch());
+			Screen_Control_Relay_Change_Mode(myStation.MBAstate, getCurswitch());
 			break;
 		case COMPLETE_CONTROL:
 			Screen_Accept_Relay(getSwitchtime(), getCurswitch());
@@ -96,7 +109,7 @@ void processingApp_display()
 		default:
 			break;
 		}
-//	Screen_Home_Origin(__MY_STATION->stID);
+//	Screen_Home_Origin(myStation.stID);
 
 //	Screen_Home_Sync(countdowntime);
 }

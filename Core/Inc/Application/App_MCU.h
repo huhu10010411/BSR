@@ -14,7 +14,7 @@
 #define UPDATE_DATA_PERIOD		10              // second
 
 
-void initApp_MCU(Station_t *station, SIM_t *mySIM);
+void initApp_MCU();
 
 void processApp_MCU(void);
 

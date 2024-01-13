@@ -1,3 +1,2 @@
-../Core/Src/Application/App_MCU.c:20:6:initApp_MCU	16	static
-../Core/Src/Application/App_MCU.c:26:9:countNUMBofactiveSensor	16	static
-../Core/Src/Application/App_MCU.c:38:6:processApp_MCU	8	static
+../Core/Src/Application/App_MCU.c:23:6:initApp_MCU	4	static
+../Core/Src/Application/App_MCU.c:40:6:processApp_MCU	8	static

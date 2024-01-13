@@ -10,6 +10,10 @@
 
 #include "stm32f1xx.h"
 #include "stdbool.h"
+//#include "usart.h"
+//#include "main.h"
+
+
 
 #define SIM_STA_CSQ_CMD				"AT+CSQ"
 #define SIM_NW_CREG_CMD				"AT+CREG?"
@@ -39,12 +43,12 @@
 #define SIM_TIMEOUT_MEDIUM		1000
 #define SIM_TIMEOUT_LONG		2000
 
-#define MAX_PAYLOAD_LEN		1024
-#define MAX_TOPIC_LEN		128
+#define MAX_PAYLOAD_LEN		256
+#define MAX_TOPIC_LEN		40
 
-#define MQTT_RXBUFF_SIZE     1024
+#define MQTT_RXBUFF_SIZE     300
 
-#define PHONENUMB_LEN		12
+#define PHONENUMB_LEN		13
 
 //extern UART_HandleTypeDef *__SIM_UART;
 //extern DMA_HandleTypeDef  *__SIM_DMA_UART;
@@ -146,10 +150,9 @@ typedef struct {
 
 
 
-extern volatile uint8_t newSMS ;
-extern volatile uint8_t newMQTTmsg ;
+//extern volatile uint8_t newMQTTmsg ;
 /****************************************************/
-void initSIM(UART_HandleTypeDef *huart, DMA_HandleTypeDef  *hdma , SIM_t *mySIM);
+void initSIM();
 
 void SIM_callback(uint16_t Size);
 

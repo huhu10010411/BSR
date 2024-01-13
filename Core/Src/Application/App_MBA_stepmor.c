@@ -18,6 +18,20 @@ void initApp_MBA_stepmor()
 void processingApp_MBA_stepmor()
 {
 	if(checkTaskflag(TASK_CTRL_STEPMOR))	{
+		switch ( getLimit() )	{
+		case LIMIT_MAX:
+			if (Step_getDir() == STEPM_DIR_DEC)	{
+				setLimit(LIMIT_NONE);
+			}
+			break;
+		case LIMIT_MIN:
+			if (Step_getDir() == STEPM_DIR_INC)	{
+				setLimit(LIMIT_NONE);
+			}
+			break;
+		default :
+			break;
+		}
 		changeMode = Step_getChangemode();
 		switch (changeMode)	{
 		case STEPM_MODE_STEP:
@@ -29,6 +43,7 @@ void processingApp_MBA_stepmor()
 		default:
 			break;
 		}
+
 		triggerTaskflag(TASK_CTRL_STEPMOR, FLAG_DIS);
 	}
 }

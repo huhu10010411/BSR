@@ -25,8 +25,8 @@ bool checkTaskflag (Task_t task)
 	case TASK_SUBSCRIBE:
 		res = (bool)__MY_STATION->task.subscribe;
 		break;
-	case TASK_CTRL_MBA:
-		res = (bool)__MY_STATION->task.CtrlMBA;
+	case TASK_SEND_MBA_STATUS:
+		res = (bool)__MY_STATION->task.sendMBAstatus;
 		break;
 	case TASK_CTRL_STEPMOR:
 		res = (bool)__MY_STATION->task.CtrlStepmotor;
@@ -70,6 +70,9 @@ bool checkTaskflag (Task_t task)
 	case TASK_SEND_GETSENSOR:
 		res = (bool)__MY_STATION->task.sendcmdGetsensor;
 		break;
+	case TASK_SEND_STEP_LIMIT:
+		res = (bool)__MY_STATION->task.sendSTEPLIMIT;
+		break;
 	default:
 		break;
 	}
@@ -87,8 +90,8 @@ void triggerTaskflag (Task_t task, Flag_t ENorDIS)
 	case TASK_SUBSCRIBE:
 		__MY_STATION->task.subscribe = ENorDIS;
 		break;
-	case TASK_CTRL_MBA:
-		__MY_STATION->task.CtrlMBA = ENorDIS;
+	case TASK_SEND_MBA_STATUS:
+		__MY_STATION->task.sendMBAstatus = ENorDIS;
 		break;
 	case TASK_CTRL_STEPMOR:
 		__MY_STATION->task.CtrlStepmotor = ENorDIS;
@@ -132,6 +135,8 @@ void triggerTaskflag (Task_t task, Flag_t ENorDIS)
 	case TASK_SEND_GETSENSOR:
 		__MY_STATION->task.sendcmdGetsensor = ENorDIS;
 		break;
+	case TASK_SEND_STEP_LIMIT:
+		__MY_STATION->task.sendSTEPLIMIT = ENorDIS;
 	default:
 		break;
 	}
@@ -141,58 +146,4 @@ void triggerTaskflag (Task_t task, Flag_t ENorDIS)
 
 
 
-//bool checkTaskStatus (Task_t task)
-//{
-//	bool res = false;
-//	switch (task) {
-//	case TASK_REGISTER:
-//		res = (bool)__MY_STATION->taskStatus.registerStatus ;
-//		break;
-//	case TASK_SUBSCRIBE:
-//		res = (bool)__MY_STATION->taskStatus.subcribeStatus;
-//		break;
-//	case TASK_CTRL_MBA:
-//		break;
-//	case TASK_CTRL_STEPMOR:
-//		break;
-//	case TASK_PREPARE_CALIB:
-//		break;
-//	case TASK_START_CALIB:
-//		break;
-//	case TASK_GET_GPS_TIME:
-//		break;
-//	case TASK_SEND_NWREADY:
-//		break;
-//	default:
-//		break;
-//	}
-//	return res;
-//}
-
-//void triggerTaskStatus (Task_t task, Status_t DONEorNDONE)
-//{
-//	switch (task) {
-//	case TASK_REGISTER:
-//		__MY_STATION->taskStatus.registerStatus = DONEorNDONE;
-//		break;
-//	case TASK_SUBSCRIBE:
-//		__MY_STATION->taskStatus.subcribeStatus = DONEorNDONE;
-//		break;
-//	case TASK_SEND_DATAPERIOD:
-//		__MY_STATION->taskStatus.sendDataperiodStatus = DONEorNDONE;
-//		break;
-//	case TASK_CTRL_STEPMOR:
-//		break;
-//	case TASK_PREPARE_CALIB:
-//		break;
-//	case TASK_START_CALIB:
-//		break;
-//	case TASK_GET_GPS_TIME:
-//		break;
-//	case TASK_SEND_NWREADY:
-//		break;
-//	default:
-//		break;
-//	}
-//}
 

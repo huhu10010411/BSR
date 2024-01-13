@@ -36,11 +36,19 @@ Stepmotor_dir_t Step_getDir();
 
 void Step_setDir(Stepmotor_dir_t dir);
 
+void Step_toggleDir();
+
+void Step_setStepChange(uint16_t value);
+
 uint16_t getStepchange();
 
 void decreaseStepchange();
 
 void increaseStepchange();
+
+void Step_setPercentChange(uint8_t percent);
+
+uint8_t Step_getPercentChange();
 
 void Step_setChangeMode(Stepmotor_change_mode_t mode);
 

@@ -43,20 +43,30 @@ void Screen_Init(_RTC *myRTC)
 //	LCD_Print("Hello!");
 }
 
-void Screen_Home_Origin(uint8_t ID)
+void Screen_Home_Origin(uint8_t ID, uint8_t connectflag)
 {
     char buffer[20];
     DS3231_GetTime(__MY_RTC);
 //	LCD_Clear();
+    LCD_GotoXY(11, 1);
+    LCD_Print("NETW");
+    LCD_GotoXY(12, 2);
+    if (connectflag)	{
+    	LCD_Print("ONL");
+    }
+    else {
+    	LCD_Print("OFF");
+    }
+
 	LCD_GotoXY(0, 0);
 //	LCD_Print("Station Node");
 //    LCD_GotoXY(0, 1);
     sprintf(buffer,"Station ID: 0x%02X", ID);
     LCD_Print(buffer);
-    LCD_GotoXY(4, 1);
+    LCD_GotoXY(0, 1);
     sprintf(buffer,"%02d/%02d/%d", __MY_RTC->Date, __MY_RTC->Month, __MY_RTC->Year);
     LCD_Print(buffer);
-    LCD_GotoXY(4, 2);
+    LCD_GotoXY(0, 2);
     sprintf(buffer,"%02d:%02d:%02d", __MY_RTC->Hour, __MY_RTC->Min, __MY_RTC->Sec);
     LCD_Print(buffer);
     LCD_GotoXY(5, 3);
@@ -183,9 +193,9 @@ void Screen_Function(uint8_t position)
 	LCD_GotoXY(0, position);
 	LCD_SendData(_LCD_CHAR_RIGHT_INVERT);
     LCD_GotoXY(1, 0);
-    LCD_Print("Output Voltage");
+    LCD_Print("Control Voltage");
     LCD_GotoXY(1, 1);
-    LCD_Print("Output ON/OFF");
+    LCD_Print("Control ON/OFF");
     LCD_GotoXY(3, 3);
     LCD_SendData(_LCD_CHAR_LEFT);
     LCD_GotoXY(4, 3);
@@ -193,31 +203,138 @@ void Screen_Function(uint8_t position)
     LCD_GotoXY(12,3);
     LCD_SendData(_LCD_CHAR_RIGHT);
 }
-
-void Screen_Voltage_Control(uint8_t limit)
+/*
+ * @argument :
+ * 	- limit : 0 MIN, 1 MAX, other NONE
+ * 	- ValorDir: 0 Value, 1 Direction
+ */
+void Screen_Voltage_Control(uint8_t limit , uint8_t ValorDir)
 {
 //	LCD_Clear();
 	LCD_GotoXY(0, 0);
 	LCD_Print("Voltage Control");
-    LCD_GotoXY(0, 1);
+	if (ValorDir == 0)	{
+		LCD_GotoXY(0, 1);
+	}
+	else if (ValorDir == 1)  {
+		LCD_GotoXY(0, 2);
+	}
+	else {
+		LCD_GotoXY(0, 3);
+	}
+	LCD_SendData(_LCD_CHAR_RIGHT);
+
+    LCD_GotoXY(1, 1);
     LCD_Print("Step: ");
-    LCD_GotoXY(0, 2);
+
+    LCD_GotoXY(1, 2);
+    LCD_Print("Direction: ");
+
+    LCD_GotoXY(1, 3);
+    LCD_Print("Confirm");
+
+    LCD_GotoXY(12, 3);
     if (limit == 0){
-        LCD_Print("Limit: MIN");
+        LCD_Print("MIN");
     } else if (limit == 1) {
-        LCD_Print("Limit: MAX");
+        LCD_Print("MAX");
     } else {
-        LCD_Print("Limit: NONE");
+        LCD_Print("NONE");
     }
-    LCD_GotoXY(3, 3);
-    LCD_SendData(_LCD_CHAR_LEFT);
-    LCD_GotoXY(4, 3);
-    LCD_Print("FUNCTION");
-    LCD_GotoXY(12,3);
-    LCD_SendData(_LCD_CHAR_RIGHT);
+//    LCD_GotoXY(3, 3);
+//    LCD_SendData(_LCD_CHAR_LEFT);
+//    LCD_GotoXY(4, 3);
+//    LCD_Print("FUNCTION");
+//    LCD_GotoXY(12,3);
+//    LCD_SendData(_LCD_CHAR_RIGHT);
 }
 
-void Screen_Voltage_Control_Control_Motor(uint16_t step)
+void Screen_Dir_Control(uint8_t limit)
+{
+//	LCD_Clear();
+	LCD_GotoXY(0, 0);
+	LCD_Print("Voltage Control");
+//	if (ValorDir == 0)	{
+//		LCD_GotoXY(0, 1);
+//	}
+//	else if (ValorDir == 1)  {
+//		LCD_GotoXY(0, 2);
+//	}
+//	else {
+//		LCD_GotoXY(0, 2);
+//	}
+	LCD_GotoXY(15, 2);
+	LCD_SendData(_LCD_CHAR_LEFT);
+
+    LCD_GotoXY(1, 1);
+    LCD_Print("Step: ");
+
+    LCD_GotoXY(1, 2);
+    LCD_Print("Direction: ");
+
+    LCD_GotoXY(1, 3);
+    LCD_Print("Confirm");
+
+    LCD_GotoXY(12, 3);
+    if (limit == 0){
+        LCD_Print("MIN");
+    } else if (limit == 1) {
+        LCD_Print("MAX");
+    } else {
+        LCD_Print("NONE");
+    }
+//    LCD_GotoXY(3, 3);
+//    LCD_SendData(_LCD_CHAR_LEFT);
+//    LCD_GotoXY(4, 3);
+//    LCD_Print("FUNCTION");
+//    LCD_GotoXY(12,3);
+//    LCD_SendData(_LCD_CHAR_RIGHT);
+}
+
+void Screen_StepVal_Control(uint8_t limit)
+{
+//	LCD_Clear();
+	LCD_GotoXY(0, 0);
+	LCD_Print("Voltage Control");
+
+	LCD_GotoXY(12, 1);
+	LCD_SendData(_LCD_CHAR_LEFT);
+//	if (ValorDir == 0)	{
+//		LCD_GotoXY(0, 1);
+//	}
+//	else if (ValorDir == 1)  {
+//		LCD_GotoXY(0, 2);
+//	}
+//	else {
+//		LCD_GotoXY(0, 2);
+//	}
+//	LCD_SendData(_LCD_CHAR_RIGHT);
+
+    LCD_GotoXY(1, 1);
+    LCD_Print("Step: ");
+
+    LCD_GotoXY(1, 2);
+    LCD_Print("Direction: ");
+
+    LCD_GotoXY(1, 3);
+    LCD_Print("Confirm");
+
+    LCD_GotoXY(12, 3);
+    if (limit == 0){
+        LCD_Print("MIN");
+    } else if (limit == 1) {
+        LCD_Print("MAX");
+    } else {
+        LCD_Print("NONE");
+    }
+//    LCD_GotoXY(3, 3);
+//    LCD_SendData(_LCD_CHAR_LEFT);
+//    LCD_GotoXY(4, 3);
+//    LCD_Print("FUNCTION");
+//    LCD_GotoXY(12,3);
+//    LCD_SendData(_LCD_CHAR_RIGHT);
+}
+void Screen_Voltage_Control_Control_Motor(uint16_t step, uint8_t dir)
 {
 //	uint16_t adc_value = 330;
     char buffer[20];
@@ -231,6 +348,16 @@ void Screen_Voltage_Control_Control_Motor(uint16_t step)
 	sprintf(buffer,"%d", step);
 //	sprintf(buffer,"%01d.%02dV", adc_value/100, adc_value%100);
 	LCD_Print(buffer);
+	LCD_GotoXY(12, 2);
+	if (dir == 0x01) {
+		LCD_Print("INC");
+	}
+	else if (dir == 0x02) {
+		LCD_Print("DEC");
+	}
+
+
+
 }
 
 void Screen_Control_Relay(uint8_t position)
@@ -252,14 +379,14 @@ void Screen_Control_Relay(uint8_t position)
     LCD_SendData(_LCD_CHAR_RIGHT);
 }
 
-void Screen_Control_Relay_Change_Mode(uint8_t status)
+void Screen_Control_Relay_Change_Mode(uint8_t curStatus,uint8_t status)
 {
-//	LCD_GotoXY(9, 1);
-//	if (status == 0){
-//		LCD_Print("OFF");
-//	} else {
-//		LCD_Print("ON");
-//	}
+	LCD_GotoXY(12, 1);
+	if (curStatus == 2){
+		LCD_Print("OFF");
+	} else if (curStatus == 1){
+		LCD_Print("ON");
+	}
 	LCD_GotoXY(10, 2);
 	if (status == 0){
 		LCD_Print("OFF");

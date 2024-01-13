@@ -10,10 +10,11 @@
 
 #include "App_Display.h"
 #include "linkedlist.h"
+#include "main.h"
 
 
 
-void initButton(DISPLAY_MODE_t *displaymode, s_list *mylist, uint16_t *myStepposition);
+void initButton(DISPLAY_MODE_t *displaymode);
 
 void buttonMENU_handler();
 
@@ -42,6 +43,8 @@ CONTROL_t getcurControl();
 SWITCH_t getCurswitch();
 
 void setCurswitch(SWITCH_t ONorOFF);
+
+STEP_t getStepValorDir();
 
 
 

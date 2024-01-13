@@ -56,7 +56,7 @@ void A4988_DisableDriver()
 
 void A4988_SetDirection(int direction)
 {
-	if (direction > 0)
+	if (direction == 1)
 	{
 		HAL_GPIO_WritePin(myMotor.PDIR, myMotor.DIR, GPIO_PIN_SET);
 	} else {
@@ -68,7 +68,7 @@ void A4988_SetDirection(int direction)
 
 void A4988_StepByStep(int steps, int direction)
 {
-	if (direction > 0) {
+	if (direction == 1) {
 		HAL_GPIO_WritePin(myMotor.PDIR, myMotor.DIR, GPIO_PIN_SET);
 	} else {
 		HAL_GPIO_WritePin(myMotor.PDIR, myMotor.DIR, GPIO_PIN_RESET);

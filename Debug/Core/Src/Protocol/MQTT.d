@@ -29,10 +29,9 @@ Core/Src/Protocol/MQTT.o: ../Core/Src/Protocol/MQTT.c \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h \
  D:/blue_pill_pj/Station/Core/Inc/Device/SIM.h \
- D:/blue_pill_pj/Station/Core/Inc/Communication/Serial_log.h \
  ../Core/Inc/String_process.h ../Core/Inc/usart.h ../Core/Inc/main.h \
  ../Core/Inc/linkedlist.h \
- D:/blue_pill_pj/Station/Core/Inc/Device/Contactor.h
+ D:/blue_pill_pj/Station/Core/Inc/Device/Contactor.h ../Core/Inc/main.h
 D:/blue_pill_pj/Station/Core/Inc/Protocol/MQTT.h:
 ../Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f1xx.h:
 ../Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f103xb.h:
@@ -63,9 +62,9 @@ D:/blue_pill_pj/Station/Core/Inc/Protocol/MQTT.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h:
 D:/blue_pill_pj/Station/Core/Inc/Device/SIM.h:
-D:/blue_pill_pj/Station/Core/Inc/Communication/Serial_log.h:
 ../Core/Inc/String_process.h:
 ../Core/Inc/usart.h:
 ../Core/Inc/main.h:
 ../Core/Inc/linkedlist.h:
 D:/blue_pill_pj/Station/Core/Inc/Device/Contactor.h:
+../Core/Inc/main.h:

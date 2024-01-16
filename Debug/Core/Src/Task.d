@@ -28,7 +28,7 @@ Core/Src/Task.o: ../Core/Src/Task.c ../Core/Inc/Task.h ../Core/Inc/main.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h \
  ../Core/Inc/linkedlist.h D:/blue_pill_pj/Station/Core/Inc/Device/SIM.h \
- D:/blue_pill_pj/Station/Core/Inc/Device/Contactor.h
+ D:/blue_pill_pj/Station/Core/Inc/Device/Contactor.h ../Core/Inc/main.h
 ../Core/Inc/Task.h:
 ../Core/Inc/main.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h:
@@ -62,3 +62,4 @@ Core/Src/Task.o: ../Core/Src/Task.c ../Core/Inc/Task.h ../Core/Inc/main.h \
 ../Core/Inc/linkedlist.h:
 D:/blue_pill_pj/Station/Core/Inc/Device/SIM.h:
 D:/blue_pill_pj/Station/Core/Inc/Device/Contactor.h:
+../Core/Inc/main.h:

@@ -29,14 +29,14 @@ typedef struct {
 }GPS_t;
 
 /****************************************************/
-void initGPS(Station_t *station, _RTC *rtc);
-void initSerial_CFG(UART_HandleTypeDef *huart,DMA_HandleTypeDef  *hdma);
+void initGPS( _RTC *rtc);
+void initSerial_CFG();
 
 void enableReceiveDMAtoIdle_CFG(void);
 
 void Serial_CFG_Callback(uint16_t Size);
 
-void processing_CMD(uint8_t *myID);
+//void processing_CMD(uint8_t *myID);
 
 void MarkAsReadData_CFG(void);
 

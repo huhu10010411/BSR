@@ -6,13 +6,14 @@
  */
 
 #include "Task.h"
+#include "main.h"
 
 
-static Station_t *__MY_STATION;
+//static Station_t *myStation;
 
-void initTask(Station_t *station)
+void initTask()
 {
-	__MY_STATION = station;
+//	myStation = station;
 }
 
 bool checkTaskflag (Task_t task)
@@ -20,58 +21,58 @@ bool checkTaskflag (Task_t task)
 	bool res = false;
 	switch (task) {
 	case TASK_REGISTER:
-		res = (bool)__MY_STATION->task.register2server ;
+		res = (bool)myStation.task.register2server ;
 		break;
 	case TASK_SUBSCRIBE:
-		res = (bool)__MY_STATION->task.subscribe;
+		res = (bool)myStation.task.subscribe;
 		break;
 	case TASK_SEND_MBA_STATUS:
-		res = (bool)__MY_STATION->task.sendMBAstatus;
+		res = (bool)myStation.task.sendMBAstatus;
 		break;
 	case TASK_CTRL_STEPMOR:
-		res = (bool)__MY_STATION->task.CtrlStepmotor;
+		res = (bool)myStation.task.CtrlStepmotor;
 		break;
 	case TASK_PREPARE_CALIB:
-		res = (bool)__MY_STATION->task.PrepareCalib;
+		res = (bool)myStation.task.PrepareCalib;
 		break;
 	case TASK_START_CALIB:
-		res = (bool)__MY_STATION->task.StartCalib;
+		res = (bool)myStation.task.StartCalib;
 		break;
 	case TASK_GET_GPS_TIME:
-		res = (bool)__MY_STATION->task.getGPStimeflag;
+		res = (bool)myStation.task.getGPStimeflag;
 		break;
 	case TASK_SEND_NWREADY:
-		res = (bool)__MY_STATION->task.sendNWready;
+		res = (bool)myStation.task.sendNWready;
 		break;
 	case TASK_SEND_DATACALIB:
-		res = (bool)__MY_STATION->task.sendDATACALIB;
+		res = (bool)myStation.task.sendDATACALIB;
 		break;
 	case TASK_SEND_DATAPERIOD:
-		res = (bool)__MY_STATION->task.sendDataPeriod;
+		res = (bool)myStation.task.sendDataPeriod;
 		break;
 	case TASK_SEND_DATAAFTERCALIB:
-		res = (bool)__MY_STATION->task.sendDATAafterCALIB;
+		res = (bool)myStation.task.sendDATAafterCALIB;
 		break;
 	case TASK_SEND_CTRLMBA:
-		res = (bool)__MY_STATION->task.sendcmdCtrlMBA;
+		res = (bool)myStation.task.sendcmdCtrlMBA;
 		break;
 	case TASK_SEND_CTRLSTEPMOR:
-		res = (bool)__MY_STATION->task.sendcmdCtrlStepmotor;
+		res = (bool)myStation.task.sendcmdCtrlStepmotor;
 		break;
 	case TASK_SEND_CALIB:
-		res = (bool)__MY_STATION->task.sendcmdCalib;
+		res = (bool)myStation.task.sendcmdCalib;
 		break;
 	case TASK_SEND_GETSTATUS:
-		res = (bool)__MY_STATION->task.sendcmdGetstatus;
+		res = (bool)myStation.task.sendcmdGetstatus;
 		break;
 	case TASK_SEND_GETSTATION:
-		res = (bool)__MY_STATION->task.sendcmdGetstation;
+		res = (bool)myStation.task.sendcmdGetstation;
 		break;
 	case TASK_SEND_GETSENSOR:
-		res = (bool)__MY_STATION->task.sendcmdGetsensor;
+		res = (bool)myStation.task.sendcmdGetsensor;
 		break;
 	case TASK_SEND_STEP_LIMIT:
-		res = (bool)__MY_STATION->task.sendSTEPLIMIT;
+		res = (bool)myStation.task.sendSTEPLIMIT;
 		break;
 	default:
 		break;
@@ -85,58 +86,58 @@ void triggerTaskflag (Task_t task, Flag_t ENorDIS)
 {
 	switch (task) {
 	case TASK_REGISTER:
-		__MY_STATION->task.register2server = ENorDIS;
+		myStation.task.register2server = ENorDIS;
 		break;
 	case TASK_SUBSCRIBE:
-		__MY_STATION->task.subscribe = ENorDIS;
+		myStation.task.subscribe = ENorDIS;
 		break;
 	case TASK_SEND_MBA_STATUS:
-		__MY_STATION->task.sendMBAstatus = ENorDIS;
+		myStation.task.sendMBAstatus = ENorDIS;
 		break;
 	case TASK_CTRL_STEPMOR:
-		__MY_STATION->task.CtrlStepmotor = ENorDIS;
+		myStation.task.CtrlStepmotor = ENorDIS;
 		break;
 	case TASK_PREPARE_CALIB:
-		__MY_STATION->task.PrepareCalib = ENorDIS;
+		myStation.task.PrepareCalib = ENorDIS;
 		break;
 	case TASK_START_CALIB:
-		__MY_STATION->task.StartCalib = ENorDIS;
+		myStation.task.StartCalib = ENorDIS;
 		break;
 	case TASK_GET_GPS_TIME:
-		__MY_STATION->task.getGPStimeflag = ENorDIS;
+		myStation.task.getGPStimeflag = ENorDIS;
 		break;
 	case TASK_SEND_NWREADY:
-		__MY_STATION->task.sendNWready = ENorDIS;
+		myStation.task.sendNWready = ENorDIS;
 		break;
 	case TASK_SEND_DATACALIB:
-		__MY_STATION->task.sendDATACALIB = ENorDIS;
+		myStation.task.sendDATACALIB = ENorDIS;
 		break;
 	case TASK_SEND_DATAPERIOD:
-		__MY_STATION->task.sendDataPeriod = ENorDIS;
+		myStation.task.sendDataPeriod = ENorDIS;
 		break;
 	case TASK_SEND_DATAAFTERCALIB:
-		__MY_STATION->task.sendDATAafterCALIB = ENorDIS;
+		myStation.task.sendDATAafterCALIB = ENorDIS;
 		break;
 	case TASK_SEND_CTRLMBA:
-		__MY_STATION->task.sendcmdCtrlMBA = ENorDIS;
+		myStation.task.sendcmdCtrlMBA = ENorDIS;
 		break;
 	case TASK_SEND_CTRLSTEPMOR:
-		__MY_STATION->task.sendcmdCtrlStepmotor = ENorDIS;
+		myStation.task.sendcmdCtrlStepmotor = ENorDIS;
 		break;
 	case TASK_SEND_CALIB:
-		__MY_STATION->task.sendcmdCalib = ENorDIS;
+		myStation.task.sendcmdCalib = ENorDIS;
 		break;
 	case TASK_SEND_GETSTATUS:
-		__MY_STATION->task.sendcmdGetstatus = ENorDIS;
+		myStation.task.sendcmdGetstatus = ENorDIS;
 		break;
 	case TASK_SEND_GETSTATION:
-		__MY_STATION->task.sendcmdGetstation = ENorDIS;
+		myStation.task.sendcmdGetstation = ENorDIS;
 		break;
 	case TASK_SEND_GETSENSOR:
-		__MY_STATION->task.sendcmdGetsensor = ENorDIS;
+		myStation.task.sendcmdGetsensor = ENorDIS;
 		break;
 	case TASK_SEND_STEP_LIMIT:
-		__MY_STATION->task.sendSTEPLIMIT = ENorDIS;
+		myStation.task.sendSTEPLIMIT = ENorDIS;
 	default:
 		break;
 	}

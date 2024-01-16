@@ -16,6 +16,7 @@
 #define ID_STARTPOS		3
 
 
+
 #define START_VALUE		1
 
 //extern UART_HandleTypeDef *__LORA_UART;
@@ -28,7 +29,7 @@ void enableReceiveDMAtoIdle_Lora(void);
 
 void Lora_callback(uint16_t Size);
 
-uint8_t Lora_Setmode(sensor_mode_t mode);
+uint8_t Lora_Setmode(sensor_mode_t mode, uint8_t checkres);
 
 void Lora_receive(uint8_t *Msg, uint8_t msglen);
 

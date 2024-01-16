@@ -33,7 +33,7 @@ typedef enum {
 
 typedef struct{
 	uint8_t  	SSnode_ID;          // Sensor node ID
-	uint16_t    Battery;
+	uint8_t    Battery;
 	voltage_t		V_type;				// Voltage type
 	uint16_t volatile V_value;			// Voltage value
 	sensor_state_t	Sensor_state;

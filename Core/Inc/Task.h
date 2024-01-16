@@ -36,7 +36,7 @@ typedef enum {
 	TASK_SEND_GETSENSOR
 }Task_t;
 
-void initTask(Station_t *station);
+void initTask();
 
 bool checkTaskflag (Task_t task);
 

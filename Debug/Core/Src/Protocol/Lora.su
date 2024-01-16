@@ -4,6 +4,6 @@
 ../Core/Src/Protocol/Lora.c:58:6:Lora_callback	16	static
 ../Core/Src/Protocol/Lora.c:106:6:MarkAsReadData_LORA	4	static
 ../Core/Src/Protocol/Lora.c:111:6:isIDExist	24	static
-../Core/Src/Protocol/Lora.c:121:6:Lora_receive	392	dynamic
-../Core/Src/Protocol/Lora.c:229:9:Lora_Setmode	24	static
-../Core/Src/Protocol/Lora.c:241:6:testLora_receive	24	static
+../Core/Src/Protocol/Lora.c:121:6:Lora_receive	384	dynamic
+../Core/Src/Protocol/Lora.c:237:9:Lora_Setmode	24	static
+../Core/Src/Protocol/Lora.c:261:6:testLora_receive	4	static

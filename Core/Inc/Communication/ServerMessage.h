@@ -56,7 +56,8 @@ typedef enum
 	CMD_CTRL_STEP_MOTOR,
 	CMD_SWITCH_MODE,
 	CMD_GET_LATEST_DATA_SENSOR,
-	CMD_GET_LASTEST_DATA_STATION
+	CMD_GET_LASTEST_DATA_STATION,
+	CMD_SYN_SENSOR
 }CMD_t;
 
 typedef enum
@@ -82,10 +83,6 @@ typedef enum
 	DATA_MBA_STATE,
 	DATA_STEP_REACH_LIMIT
 }DATA_t;
-
-
-
-
 
 void initServerMsg ();
 

@@ -16,10 +16,10 @@
 void init_App_Serial ()
 {
 //	__MY_STATION_SERIAL = station;
-	initSerial_CFG(&huart2,&hdma_usart2_rx);
+
 }
 
 void processApp_Serial(void)
 {
-	processing_CMD(&myStation.stID);
+//	processing_CMD(&myStation.stID);
 }

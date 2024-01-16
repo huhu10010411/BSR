@@ -135,6 +135,7 @@ void Lora_receive(uint8_t *Msg, uint8_t msglen)
 	uint8_t modevalue = 0;
 	uint16_t Vperiod = 0;
 	uint8_t Vcalib[101];
+	uint8_t vbat = 0;
 	uint8_t mode = 0;
 	uint8_t tmp = Msg[ID_STARTPOS+id_len];
 	switch (tmp)	{
@@ -157,12 +158,13 @@ void Lora_receive(uint8_t *Msg, uint8_t msglen)
 		flag = 1;
 	}
 	else {
-
 		// check whether Data Period or Data Calib
 		switch	(Msg[ID_STARTPOS +id_len +1]) {
 		case 2:
 			// Get data period value
 			Vperiod = buff2twobyte(Msg + ID_STARTPOS +id_len +2);
+			// get Vbat
+			vbat = Msg[ID_STARTPOS +id_len +6];
 			flag = 2;
 			break;
 		case 100:
@@ -172,6 +174,7 @@ void Lora_receive(uint8_t *Msg, uint8_t msglen)
 			break;
 		default:
 			break;
+
 		}
 
 	}
@@ -187,6 +190,7 @@ void Lora_receive(uint8_t *Msg, uint8_t msglen)
 		case 2:
 			newSensor.V_type = vtype;
 			newSensor.V_value = Vperiod;
+			newSensor.Battery = vbat;
 			break;
 		case 3:
 			newSensor.V_type = vtype;
@@ -210,6 +214,7 @@ void Lora_receive(uint8_t *Msg, uint8_t msglen)
 				case 2:
 					current->SSnode.V_type = vtype;
 					current->SSnode.V_value = Vperiod;
+					current->SSnode.Battery = vbat;
 					break;
 				case 3:
 					current->SSnode.V_type = vtype;
@@ -225,24 +230,40 @@ void Lora_receive(uint8_t *Msg, uint8_t msglen)
 		}
 	}
 }
-
-uint8_t Lora_Setmode(sensor_mode_t mode)
+/*
+ *  @para: checkres : 0 no check
+ *  				  1 check
+ */
+uint8_t Lora_Setmode(sensor_mode_t mode, uint8_t checkres)
 {
 	uint8_t len = sprintf((char*)LoraTxbuff, "AT+MODE=%d", mode);
 	isOK = 0;
 	HAL_UART_Transmit(__LORA_UART, LoraTxbuff, len, LORA_TIMEOUT);
 	// Wait for responding
-	for (uint8_t i = 0; i < 500; i++)	{
-		HAL_Delay(2);
-		if (isOK)	return 1;
+	switch (checkres)	{
+	case 0:
+		break;
+	case 1:
+		for (uint16_t i = 0; i < 500; i++)	{
+			HAL_Delay(2);
+			if (isOK) {
+				return 1;
+			}
+		}
+		break;
+	default :
+		break;
 	}
+
+
 	return 0;
 }
 void testLora_receive (void)
 {
-	uint8_t modemsg [] = {0x01, 0x04, 0x53,0x30, 0x39, 0x31, 0x04, 0x01, 0x00, 0x00, 0xD6};
+//	Lora_Setmode(SLEEP,1);
+//	uint8_t modemsg [] = {0x01, 0x04, 0x53,0x30, 0x39, 0x31, 0x04, 0x01, 0x00, 0x00, 0xD6};
 //	uint8_t msg[] = { 0x01, 0x04, 0x53, 0x30, 0x39, 0x31, 0x07, 0x02, 0x05, 0xD6, 0x09, 0x02, 0x02, 0xF4, 0x00, 0x64};
-	Lora_receive(modemsg, 20);
+//	Lora_receive(modemsg, 20);
 //	Serial_log_number(myStation->stID);
 }
 

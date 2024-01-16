@@ -16,13 +16,17 @@
 #include "Task.h"
 #include "ds3231.h"
 #include "Validation.h"
+#include "main.h"
+#include "usart.h"
 
+#define __SCFG_UART &huart2
+#define __SCFG_DMA_UART &hdma_usart2_rx
 #define Rx_SIZE_CFG     256
 #define Main_SIZE_CFG    1024
 #define GPS_RXBUFF_MAXLEN	512
 
-UART_HandleTypeDef *__SCFG_UART;
-DMA_HandleTypeDef  *__SCFG_DMA_UART;
+//UART_HandleTypeDef *__SCFG_UART;
+//DMA_HandleTypeDef  *__SCFG_DMA_UART;
 
 uint8_t Rxbuff_CFG[Rx_SIZE_CFG];
 uint8_t Mainbuff_CFG[Main_SIZE_CFG];
@@ -37,21 +41,21 @@ uint8_t volatile isSerialConfig = 0;
 
 static uint32_t tick = 0;
 
-Station_t *__MY_STATION_GPS;
+//Station_t *myStation;
 _RTC *__MY_RTC;
 
 uint8_t alarmflag = 0;
 
-void initSerial_CFG(UART_HandleTypeDef *huart, DMA_HandleTypeDef  *hdma)
+void initSerial_CFG()
 {
-	__SCFG_UART = huart;
-	__SCFG_DMA_UART = hdma;
+//	__SCFG_UART = huart;
+//	__SCFG_DMA_UART = hdma;
 	enableReceiveDMAtoIdle_CFG();
 }
 
-void initGPS(Station_t *station, _RTC *rtc)
+void initGPS(_RTC *rtc)
 {
-	__MY_STATION_GPS = station;
+//	myStation = station;
 	__MY_RTC = rtc;
 }
 
@@ -113,75 +117,75 @@ void Serial_CFG_Callback(uint16_t Size)
 }
 
 
-void processing_CMD(uint8_t *myID)
-{
-
-	if (isSerialConfig)	{
-
-	uint8_t len;
-	uint16_t size = 0;
-	uint8_t tmpID;
-	uint8_t tmpbuff[10];
-	uint8_t *Processingbuff;
-
-	//Copy data to processing buffer
-	if(head_CFG > tail_CFG)
-	{
-		size = head_CFG - tail_CFG;
-		Processingbuff = (uint8_t*)malloc( size*sizeof(uint8_t) );
-		memcpy((uint8_t*)Processingbuff, (uint8_t*)Mainbuff_CFG+ tail_CFG, size);
-	}
-	else if (head_CFG < tail_CFG)
-	{
-		size = Main_SIZE_CFG - tail_CFG + head_CFG;
-		Processingbuff = (uint8_t*)malloc( size*sizeof(uint8_t) );
-		memcpy((uint8_t*)Processingbuff, (uint8_t*)Mainbuff_CFG + tail_CFG, Main_SIZE_CFG - tail_CFG);
-		memcpy((uint8_t*)Processingbuff + Main_SIZE_CFG - tail_CFG, (uint8_t*)Mainbuff_CFG, head_CFG);
-	}
-	else return;
-
-	// Check whether the Command "SET ID" in the buffer
-	uint8_t *currPOS = isWordinBuff(Processingbuff, size, (uint8_t*)"MCFG+SETID:");
-	if (  currPOS != NULL)	{
-		uint16_t currsize = getRemainsize(currPOS, Processingbuff, size);
-		memset(tmpbuff, 0, 10);
-		// Get ID to buffer
-		if ( !getBetween( (uint8_t*)":", (uint8_t*)";", currPOS, currsize, tmpbuff) ) {
-			free(Processingbuff);
-			MarkAsReadData_CFG();
-			return;
-		}
-		//Convert buffer ID to uint8_t value
-		tmpID = atoi( (char*)tmpbuff );
-
-		// Validation the ID
-		if ( stationID_validation(tmpID) )	{
-			// Save ID
-			*myID = tmpID;
-			// Save ID to flash
-			Flash_Write_NUM(FLASH_PAGE_127, tmpID);
-			// Respond OK to user
-			len =sprintf((char*)tx_buff, "MCFG+SETID:%d OK", tmpID);
-			HAL_UART_Transmit(__SCFG_UART, tx_buff, len, 2000);
-		}
-		else {
-			HAL_UART_Transmit(__SCFG_UART, (uint8_t*)"MCFG+SETID ERROR", 16, 2000);
-		}
-
-	}
-
-	// Check whether the Command "GET ID" in the buffer
-	if ( isWordinBuff(Processingbuff, size, (uint8_t*)"MCFG+GETID?") != NULL )	{
-		// Respond ID to user
-		len = sprintf( (char*)tx_buff,"MCFG+GETID:%d OK", *myID);
-		HAL_UART_Transmit(__SCFG_UART, (uint8_t*)tx_buff, len, 2000);
-	}
-	free(Processingbuff);
-
-	MarkAsReadData_CFG();
-	isSerialConfig = 0;
-	}
-}
+//void processing_CMD(uint8_t *myID)
+//{
+//
+//	if (isSerialConfig)	{
+//
+//	uint8_t len;
+//	uint16_t size = 0;
+//	uint8_t tmpID;
+//	uint8_t tmpbuff[10];
+//	uint8_t *Processingbuff;
+//
+//	//Copy data to processing buffer
+//	if(head_CFG > tail_CFG)
+//	{
+//		size = head_CFG - tail_CFG;
+//		Processingbuff = (uint8_t*)malloc( size*sizeof(uint8_t) );
+//		memcpy((uint8_t*)Processingbuff, (uint8_t*)Mainbuff_CFG+ tail_CFG, size);
+//	}
+//	else if (head_CFG < tail_CFG)
+//	{
+//		size = Main_SIZE_CFG - tail_CFG + head_CFG;
+//		Processingbuff = (uint8_t*)malloc( size*sizeof(uint8_t) );
+//		memcpy((uint8_t*)Processingbuff, (uint8_t*)Mainbuff_CFG + tail_CFG, Main_SIZE_CFG - tail_CFG);
+//		memcpy((uint8_t*)Processingbuff + Main_SIZE_CFG - tail_CFG, (uint8_t*)Mainbuff_CFG, head_CFG);
+//	}
+//	else return;
+//
+//	// Check whether the Command "SET ID" in the buffer
+//	uint8_t *currPOS = isWordinBuff(Processingbuff, size, (uint8_t*)"MCFG+SETID:");
+//	if (  currPOS != NULL)	{
+//		uint16_t currsize = getRemainsize(currPOS, Processingbuff, size);
+//		memset(tmpbuff, 0, 10);
+//		// Get ID to buffer
+//		if ( !getBetween( (uint8_t*)":", (uint8_t*)";", currPOS, currsize, tmpbuff) ) {
+//			free(Processingbuff);
+//			MarkAsReadData_CFG();
+//			return;
+//		}
+//		//Convert buffer ID to uint8_t value
+//		tmpID = atoi( (char*)tmpbuff );
+//
+//		// Validation the ID
+//		if ( stationID_validation(tmpID) )	{
+//			// Save ID
+//			*myID = tmpID;
+//			// Save ID to flash
+//			Flash_Write_NUM(FLASH_PAGE_127, tmpID);
+//			// Respond OK to user
+//			len =sprintf((char*)tx_buff, "MCFG+SETID:%d OK", tmpID);
+//			HAL_UART_Transmit(__SCFG_UART, tx_buff, len, 2000);
+//		}
+//		else {
+//			HAL_UART_Transmit(__SCFG_UART, (uint8_t*)"MCFG+SETID ERROR", 16, 2000);
+//		}
+//
+//	}
+//
+//	// Check whether the Command "GET ID" in the buffer
+//	if ( isWordinBuff(Processingbuff, size, (uint8_t*)"MCFG+GETID?") != NULL )	{
+//		// Respond ID to user
+//		len = sprintf( (char*)tx_buff,"MCFG+GETID:%d OK", *myID);
+//		HAL_UART_Transmit(__SCFG_UART, (uint8_t*)tx_buff, len, 2000);
+//	}
+//	free(Processingbuff);
+//
+//	MarkAsReadData_CFG();
+//	isSerialConfig = 0;
+//	}
+//}
 
 void MarkAsReadData_CFG(void)
 {

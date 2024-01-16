@@ -7,7 +7,7 @@
 #include "Step_motor.h"
 #include "user_a4988.h"
 
-#define MAX_STEP	100
+#define MAX_STEP	400
 
 static LIMIT_t limit = LIMIT_NONE;
 static Stepmotor_dir_t step_dir = STEPM_DIR_INC;

@@ -35,7 +35,7 @@ Core/Src/Communication/Serial_CFG.o: \
  D:/blue_pill_pj/Station/Core/Inc/Device/Contactor.h ../Core/Inc/main.h \
  ../Core/Inc/String_process.h ../Core/Inc/flash_storage.h \
  D:/blue_pill_pj/Station/Core/Inc/Protocol/MQTT.h ../Core/Inc/Task.h \
- ../Core/Inc/Validation.h
+ ../Core/Inc/Validation.h ../Core/Inc/usart.h
 D:/blue_pill_pj/Station/Core/Inc/Communication/Serial_CFG.h:
 ../Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f1xx.h:
 ../Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f103xb.h:
@@ -77,3 +77,4 @@ D:/blue_pill_pj/Station/Core/Inc/Device/Contactor.h:
 D:/blue_pill_pj/Station/Core/Inc/Protocol/MQTT.h:
 ../Core/Inc/Task.h:
 ../Core/Inc/Validation.h:
+../Core/Inc/usart.h:

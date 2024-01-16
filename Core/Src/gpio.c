@@ -54,8 +54,11 @@ void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOC, LCD_DB7_Pin|LCD_DB6_Pin|LCD_DB5_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, MBA_CONTACTOR_Pin|MOTOR_DIR_Pin|LED_Pin|LCD_RS_Pin
-                          |LCD_EN_Pin|LCD_DB4_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(MBA_CONTACTOR_GPIO_Port, MBA_CONTACTOR_Pin, GPIO_PIN_SET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOA, MOTOR_DIR_Pin|LED_Pin|LCD_RS_Pin|LCD_EN_Pin
+                          |LCD_DB4_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, MOTOR_STEP_Pin|MOTOR_SLEEP_Pin|MOTOR_RST_Pin|MOTOR_EN_Pin, GPIO_PIN_RESET);

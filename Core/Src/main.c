@@ -93,17 +93,23 @@ Station_t myStation = STATION_T_INIT;
 
 _RTC myRTC ;
 
-uint8_t RTC_buffer[20];
+//uint8_t RTC_buffer[20];
 
 GPS_t myGPS;
 
 DISPLAY_MODE_t myDisplayMode = HOME;
 
-extern uint8_t alarmflag;
+//extern uint8_t alarmflag;
+uint8_t volatile sync_flag = 0;       // 0 : calib  ; 1: synchronize sensor node
 
 uint32_t volatile  tmpadc= 0;
 uint16_t volatile  adccount = 0;
-uint8_t debug = 0;
+
+uint32_t curtick = 0;
+uint32_t pretick = 0;
+
+uint8_t flag = 0;
+//uint8_t debug = 0;
 
 /* USER CODE END PV */
 
@@ -121,7 +127,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 	{
 		SIM_callback(Size);
 	}
-	if (huart->Instance== __SCFG_UART->Instance)
+	if (huart->Instance== USART2)
 	{
 		Serial_CFG_Callback(Size);
 	}
@@ -136,41 +142,56 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	if (GPIO_Pin == RTC_ALARM_TRIGGER_Pin)	{
 //		alarmflag = 0;
 		// turn OFF MBA
-		myStation.MBAstate = switchContactor(MBA_OFF);
-//		HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-		DS3231_ClearAlarm1();
-		// Change to Calib mode
-		setStationMode(STATION_MODE_CALIB);
-		triggerTaskflag(TASK_START_CALIB, FLAG_EN);
-	}
-	if (GPIO_Pin == BUTTON_MENU_Pin) {
-		// Button Menu handler
-		buttonMENU_handler();
-	}
+		if(!sync_flag)	{
+			myStation.MBAstate = switchContactor(MBA_OFF);
+//			HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+			DS3231_ClearAlarm1();
+			// Set Mode Measure for Sensor node
+			Lora_Setmode(MEASURE, 0);
+			// Change to Calib mode
+//			setStationMode(STATION_MODE_CALIB);
+			triggerTaskflag(TASK_START_CALIB, FLAG_EN);
+		}
+		else {
+			Lora_Setmode(SLEEP, 0);
+			DS3231_ClearAlarm1();
+		}
 
-	if (GPIO_Pin == BUTTON_OK_Pin) {
-		// Button OK handler
-		buttonOK_handler();
 	}
+	curtick = HAL_GetTick();
 
-	if (GPIO_Pin == BUTTON_UP_Pin) {
-		// Button UP handler
-		buttonUP_handler();
-	}
+	if (curtick - pretick > 20)	{
+		pretick = curtick;
 
-	if (GPIO_Pin == BUTTON_DOWN_Pin) {
-		// Button DOWN handler
-		buttonDOWN_handler();
-	}
+		if (GPIO_Pin == BUTTON_MENU_Pin) {
+			// Button Menu handler
+			buttonMENU_handler();
+		}
 
-	if (GPIO_Pin == LIMIT_SWITCH_MAX_Pin) {
-		// Button Limit MAX handler
-		SW_LIMIT_MAX_handler();
-	}
+		if (GPIO_Pin == BUTTON_OK_Pin) {
+			// Button OK handler
+			buttonOK_handler();
+		}
 
-	if (GPIO_Pin == LIMIT_SWITCH_MIN_Pin) {
-		// Button Limit MIN handler
-		SW_LIMIT_MIN_handler();
+		if (GPIO_Pin == BUTTON_UP_Pin) {
+			// Button UP handler
+			buttonUP_handler();
+		}
+
+		if (GPIO_Pin == BUTTON_DOWN_Pin) {
+			// Button DOWN handler
+			buttonDOWN_handler();
+		}
+
+		if (GPIO_Pin == LIMIT_SWITCH_MAX_Pin) {
+			// Button Limit MAX handler
+			SW_LIMIT_MAX_handler();
+		}
+
+		if (GPIO_Pin == LIMIT_SWITCH_MIN_Pin) {
+			// Button Limit MIN handler
+			SW_LIMIT_MIN_handler();
+		}
 	}
 }
 
@@ -182,15 +203,15 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 		currentConvert(&tmpadc);
 	}
 }
-void setStationMode(Station_Mode_t mode)
-{
-	myStation.StMODE = mode;
-}
-
-Station_Mode_t checkStationMode()
-{
-	return myStation.StMODE;
-}
+//void setStationMode(Station_Mode_t mode)
+//{
+//	myStation.StMODE = mode;
+//}
+//
+//Station_Mode_t checkStationMode()
+//{
+//	return myStation.StMODE;
+//}
 /* USER CODE END 0 */
 
 /**
@@ -230,27 +251,28 @@ int main(void)
   MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
   SSnode_list =list_create();
-  /* For Emulator only */
-  uint8_t Sensorcalibvalue1 [101];
-  for (uint8_t i =0 ; i < 100 ; i++)	{
-	  Sensorcalibvalue1[i] = rand() % 255 ;
-  }
-  SensorNode_t firstSensornode = {0x51, 0, V_p, 10, SENSOR_ACTIVE , 1 };
-  memcpy(firstSensornode.dataCalibBuffer, Sensorcalibvalue1, 100);
-  list_append(SSnode_list, firstSensornode);
-
-  uint8_t Sensorcalibvalue2 [101];
-  for (uint8_t i =0 ; i < 100 ; i++)	{
-	  Sensorcalibvalue2[i] = rand() % 255 ;
-  }
-  SensorNode_t secondSensornode = {0x52, 0, V_p, 10, SENSOR_ACTIVE , 1};
-  memcpy(secondSensornode.dataCalibBuffer, Sensorcalibvalue2, 100);
-  list_append(SSnode_list, secondSensornode);
+/****************************************/
+//  uint8_t Sensorcalibvalue1 [101];
+//  for (uint8_t i =0 ; i < 100 ; i++)	{
+//	  Sensorcalibvalue1[i] = rand() % 255 ;
+//  }
+//  SensorNode_t firstSensornode = {0x51, 0, V_p, 10, SENSOR_ACTIVE , 1 };
+//  memcpy(firstSensornode.dataCalibBuffer, Sensorcalibvalue1, 100);
+//  list_append(SSnode_list, firstSensornode);
+//
+//  uint8_t Sensorcalibvalue2 [101];
+//  for (uint8_t i =0 ; i < 100 ; i++)	{
+//	  Sensorcalibvalue2[i] = rand() % 255 ;
+//  }
+//  SensorNode_t secondSensornode = {0x52, 0, V_p, 10, SENSOR_ACTIVE , 1};
+//  memcpy(secondSensornode.dataCalibBuffer, Sensorcalibvalue2, 100);
+//  list_append(SSnode_list, secondSensornode);
   /**********************************************************************/
 
   myStation.ssNode_list = SSnode_list;
 
   // Get station ID from flash
+//  Flash_Write_NUM(FLASH_PAGE_127, 0x04);
   myStation.stID = (uint8_t)Flash_Read_NUM(FLASH_PAGE_127);
 
 	mySIM.mqttServer.host = "tcp://broker.hivemq.com";
@@ -258,19 +280,21 @@ int main(void)
 	mySIM.mqttServer.willtopic = "unnormal_disconnect";
 	mySIM.mqttServer.willmsg = (uint8_t*)malloc(sizeof(myStation.stID));
 	sprintf((char*)mySIM.mqttServer.willmsg,"%d",myStation.stID);
-	mySIM.mqttClient.keepAliveInterval = 10;
-	mySIM.mqttClient.clientID = (char*)malloc(sizeof(myStation.stID));
-	sprintf((char*)mySIM.mqttClient.clientID,"%d",myStation.stID);
+	mySIM.mqttClient.keepAliveInterval = 180;
+	mySIM.mqttClient.clientID = "clienthehe";
+//	sprintf((char*)mySIM.mqttClient.clientID,"%d",myStation.stID);
 	mySIM.mqttReceive.qos =1;
 	mySIM.mqttServer.connect=0;
 
 	mySIM.sms = mySMS;
 
+	myGPS.getFlag = 0;
+
 	// ADC
 	HAL_ADC_Start_IT(&hadc1);
 
 
-	initTask(&myStation);
+	initTask();
 
 	// MBA and Step motor
 	initApp_MBA_stepmor();
@@ -278,8 +302,9 @@ int main(void)
 //	initLora(&huart2, &hdma_usart2_rx);
 	initmyLora();
 	// GPS
-	myGPS.getFlag = 0;
-	initGPS(&myStation, &myRTC);
+	initSerial_CFG();
+//	myGPS.getFlag = 0;
+	initGPS(&myRTC);
 
 	initSIM();
 
@@ -293,7 +318,7 @@ int main(void)
 
 	initApp_SMS(&mySIM.sms);
 
-	init_App_Serial();
+//	init_App_Serial();
 
 	// Init RTC module (DS3231)
 	DS3231_Init(&hi2c1);
@@ -305,9 +330,6 @@ int main(void)
 
 	initApp_Display(&myDisplayMode, &myRTC);
 
-	//	__MY_DISPLAY_MODE = displaymode;
-	//	__MY_SS_LIST = mylist;
-	//	__MY_STATION = myStation;
 
 //DS3231_GetTime(&myRTC);
 //	myRTC.Year = 24;
@@ -336,12 +358,18 @@ int main(void)
 //	  MQTT_testReceive();
 //	  LCD_GotoXY(1, 1);
 //	  LCD_Print("hello");
+//	  if (flag < 3)	{
+//			  flag ++;
+//			  SIM_sendCMD((uint8_t*)"AT+CMGD=1,1", (uint8_t*)"OK",
+//			  					ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 1000);
+//	  }
 	  processApp_MCU();
-	  processApp_MQTT();
 	  processingApp_display();
+	  processApp_MQTT();
 	  processingApp_MBA_stepmor();
-
 	  processApp_SMS();
+
+
 //	  LCD_PrintNumber(5);
 //	  processing_CMD(&myStation.stID);
 //	  testSynchronize();
@@ -350,7 +378,7 @@ int main(void)
 //	  testSMS();
 //	  myStation.getGPStimeflag = 1;
 //	  HAL_GPIO_TogglePin(MBA_CONTACTOR_GPIO_Port, MBA_CONTACTOR_Pin);
-	  HAL_Delay(200);
+	  HAL_Delay(50);
   }
   /* USER CODE END 3 */
 }

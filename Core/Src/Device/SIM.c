@@ -44,6 +44,7 @@ static volatile uint8_t newSMS = 0;
 
 uint8_t getSMS = 0;
 uint16_t SMS_len = 0;
+//uint8_t connlost = 0;
 
 
 
@@ -119,6 +120,9 @@ void SIM_callback(uint16_t Size)
 			MQTT_receive(MQTT_Rxbuff, Size);
 		}
 
+		if  (isWordinBuff(SIMRxbuff, Size, (uint8_t*)"+CMQTTCONNLOST:") != NULL) 	{
+			mySIM.mqttServer.connect = 0;
+		}
 //		Serial_log_string("Rx: ");
 //		Serial_log_buffer(SIMRxbuff, Size);
 //		Serial_log_string(" ");
@@ -128,11 +132,12 @@ void SIM_callback(uint16_t Size)
 SIM_res_t SIM_checkMsg(uint8_t *Msg, uint16_t timeout)
 {
 	SIM_res_t res= SIM_NO_RES;
-	timeout /= 500;
 	uint8_t dataSize = 0;
 	uint8_t tmpdbuff[SIM_BUFF_SIZE];
 	memset( (char*)tmpdbuff, 0, SIM_BUFF_SIZE );
-	for (uint16_t i = 0; i < 500 ; i++)
+//	HAL_Delay(timeout);
+	timeout /= 10;
+	for (uint16_t i = 0; i < 10 ; i++)
 	{
 		HAL_Delay(timeout);
 
@@ -151,7 +156,8 @@ SIM_res_t SIM_checkMsg(uint8_t *Msg, uint16_t timeout)
 			memcpy(tmpdbuff + SIM_BUFF_SIZE - tail, SIMbuff, head);
 		}
 		else {
-			continue;
+			return res;
+//			continue;
 		}
 
 		if ( isWordinBuff(tmpdbuff, dataSize, Msg) != NULL )	{
@@ -190,11 +196,9 @@ SIM_res_t SIM_checkMsg(uint8_t *Msg, uint16_t timeout)
 
 SIM_res_t SIM_sendCMD(uint8_t *cmd, uint8_t *checkResMsg, uint8_t CheckResENorDIS, uint8_t ENorDISmarkasread, uint32_t timeout)
 {
-	uint8_t SIM_Txbuff[100];
+	uint8_t SIM_Txbuff[128];
 	uint8_t len = sprintf( (char*)SIM_Txbuff, "%s\r\n", cmd);
-	if ( HAL_UART_Transmit(SIM_UART, SIM_Txbuff, len, 0xFFFF) != HAL_OK )	{
-//		Serial_log_string("UART transmit ERROR\r\n");
-	}
+	HAL_UART_Transmit(SIM_UART, SIM_Txbuff, len, 0xFFFF) ;
 
 	if (CheckResENorDIS == ENABLE_SIM_CHECKRES)
 	{
@@ -211,23 +215,23 @@ SIM_res_t SIM_sendCMD(uint8_t *cmd, uint8_t *checkResMsg, uint8_t CheckResENorDI
 	return SIM_NO_RES;
 }
 
+/*
+ * Return : 1 success
+ * 			0 fail
+ */
 uint8_t SIM_checkCMD (SIM_CMD_t cmd)
 {
 	uint8_t res = 0;
 //	SIM_res_t check;
 	switch (cmd) {
 		case SIM_CMD_SIMCARD_PIN:
-			if ( SIM_sendCMD( (uint8_t*)"AT+CPIN?", (uint8_t*)"+CPIN: READY", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, SIM_TIMEOUT_LONG) == SIM_RES_MSG ) {
+			if ( SIM_sendCMD( (uint8_t*)"AT+CPIN?", (uint8_t*)"+CPIN: READY", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, SIM_TIMEOUT_SHORT) == SIM_RES_MSG ) {
 				res = 1;
 //				Serial_log_string("SIM card READY\r\n");
 			}
-			else {
-//				Serial_log_string("SIM card not READY\r\n");
-
-			}
 			break;
 		case SIM_CMD_NW_CPSI:
-			if ( SIM_sendCMD( (uint8_t*)"AT+CPSI?", (uint8_t*)"+CPSI: NO SERVICE", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, SIM_TIMEOUT_LONG) == SIM_RES_MSG ) {
+			if ( SIM_sendCMD( (uint8_t*)"AT+CPSI?", (uint8_t*)"+CPSI: NO SERVICE", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, SIM_TIMEOUT_SHORT) == SIM_RES_MSG ) {
 //				Serial_log_string("NO SERVICE, network status has some problem");
 			}
 			else {
@@ -236,19 +240,16 @@ uint8_t SIM_checkCMD (SIM_CMD_t cmd)
 			}
 			break;
 		case SIM_CMD_NW_CREG:
-			if ( SIM_sendCMD( (uint8_t*)"AT+CREG?", (uint8_t*)"+CREG: 0,1", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, SIM_TIMEOUT_LONG) == SIM_RES_MSG ) {
+			if ( SIM_sendCMD( (uint8_t*)"AT+CREG?", (uint8_t*)"+CREG: 0,1", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, SIM_TIMEOUT_SHORT) == SIM_RES_MSG ) {
 				res = 1;
 //				Serial_log_string("Module is registered to CS domain\r\n");
-			}
-			else {
-//				Serial_log_string("Module is not registered to CS domain, reboot the module\r\n");
 			}
 			break;
 		case SIM_CMD_PACKDOM_CGREG:
 
 			break;
 		case SIM_CMD_STA_CSQ:
-			if ( SIM_sendCMD( (uint8_t*)"AT+CSQ", (uint8_t*)"+CSQ: 99", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, SIM_TIMEOUT_LONG) == SIM_RES_MSG ) {
+			if ( SIM_sendCMD( (uint8_t*)"AT+CSQ", (uint8_t*)"+CSQ: 99", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, SIM_TIMEOUT_SHORT) == SIM_RES_MSG ) {
 //				Serial_log_string("Signal quality is bad, please check SIM card or reboot the module\r\n");
 			}
 			else {
@@ -308,7 +309,7 @@ uint16_t SMS_getindex(uint8_t *SMSbuffer,uint16_t SMS_bufferlen)
 	if (!contentlen) {
 		contentlen = getAfterword(SMSbuffer, SMS_bufferlen, (uint8_t*)"+CMGR:", contentbuffer);
 	}
-	if (!contentlen) return 0;
+	if (!contentlen) return 200;
 
 	uint8_t indexbuffer[10];
 	getBetween((uint8_t*)" ", (uint8_t*)",", contentbuffer, contentlen, indexbuffer);
@@ -536,6 +537,8 @@ uint8_t SMS_read()
 {
 	if ( SIM_sendCMD((uint8_t*)"AT+CMGL=\"REC UNREAD\"", (uint8_t*)"OK",ENABLE_SIM_CHECKRES,
 			ENABLE_MARKASREAD, 1000) != SIM_RES_MSG )	{
+		if ( SIM_sendCMD((uint8_t*)"AT+CMGL=\"REC UNREAD\"", (uint8_t*)"OK",ENABLE_SIM_CHECKRES,
+					ENABLE_MARKASREAD, 1000) != SIM_RES_MSG )
 		newSMS = 0;
 		return 0;
 	}
@@ -558,26 +561,28 @@ uint8_t processingSMS(void)
 
 	if (!newSMS) return 0;
 
-	static uint8_t readagain = 0;
-	static uint16_t SMSindex = 0;
+//	static uint8_t readagain = 0;
+//	static uint16_t SMSindex = 0;
 
 	MarkAsReadData_SIM();
-	if ( readagain ) 	{
-		SMS_readAgain(SMSindex);
-	}
-	else 	{
+//	if ( readagain ) 	{
+//		SMS_readAgain(SMSindex);
+//	}
+//	else 	{
 		SMS_read();
-	}
+//	}
 	/* Processing SMS*/
 	//Get SMS index
-	SMSindex = SMS_getindex(SMS_Rxbuff, SMS_len);
-	if (!SMSindex)	{
-		newSMS = 0;
-		return 0;
-	}
+//	SMSindex = SMS_getindex(SMS_Rxbuff, SMS_len);
+//	if (SMSindex == 200)	{
+//		newSMS = 0;
+//		return 0;
+//	}
 	//Get phone number
 	uint8_t phonenumb[PHONENUMB_LEN];
 	if ( !SMS_getPhonenumb(SMS_Rxbuff, SMS_len, phonenumb) ) {
+		SIM_sendCMD((uint8_t*)"AT+CMGD=1,1", (uint8_t*)"OK",
+					ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 1000);
 		newSMS = 0;
 		return 0;
 	}
@@ -587,24 +592,25 @@ uint8_t processingSMS(void)
 	uint16_t contentlen = SMS_getContent(SMS_Rxbuff, SMS_len, tmpSMSdatabuffer);
 //	MQTT_publish((uint8_t*)TOPIC_PUB , tmpSMSdatabuffer, contentlen);
 	if ( !contentlen)	{
+		SIM_sendCMD((uint8_t*)"AT+CMGD=1,1", (uint8_t*)"OK",
+					ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 1000);
 		newSMS = 0;
 		return 0;
 	}
 	//Check SMS command
 	uint8_t checkres = SMS_checkCMD(tmpSMSdatabuffer, contentlen, phonenumb);
 	if ( !checkres ) 	{
-		newSMS = 0;
-		return 0;
-	}
-
-	if ( checkres == 2 )	{
-		readagain = 1;
-	}
-	else {
 		SIM_sendCMD((uint8_t*)"AT+CMGD=1,1", (uint8_t*)"OK",
 					ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 1000);
 		newSMS = 0;
+		return 0;
 	}
+//	if ( checkres == 2 )	{
+//		readagain = 1;
+//	}
+	SIM_sendCMD((uint8_t*)"AT+CMGD=1,1", (uint8_t*)"OK",
+				ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 1000);
+	newSMS = 0;
 
 	return 1;
 }
@@ -744,9 +750,9 @@ void triggerSMSreturn (SMS_CMD_t smsCMD, SMS_CMD_FLAG_t ENorDIS)
 
 uint8_t SMS_config()
 {
-	if ( SIM_sendCMD((uint8_t*)"AT+CMGF=1", (uint8_t*)"OK", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, SIM_TIMEOUT_LONG) != SIM_RES_MSG ) return 0;
+	if ( SIM_sendCMD((uint8_t*)"AT+CMGF=1", (uint8_t*)"OK", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, SIM_TIMEOUT_SHORT) != SIM_RES_MSG ) return 0;
 
-	if ( SIM_sendCMD((uint8_t*)"AT+CSCS=\"GSM\"", (uint8_t*)"OK", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, SIM_TIMEOUT_LONG) != SIM_RES_MSG)		return 0;
+	if ( SIM_sendCMD((uint8_t*)"AT+CSCS=\"GSM\"", (uint8_t*)"OK", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, SIM_TIMEOUT_SHORT) != SIM_RES_MSG)		return 0;
 
 	return 1;
 }
@@ -756,11 +762,11 @@ uint8_t SMS_sendMsg(uint8_t *Msg, uint16_t msglen, uint8_t *phonenumber )
 	if ( !SMS_config() )	return 0;
 	uint8_t SIM_Txbuff[128];
 	sprintf((char*)SIM_Txbuff, "AT+CMGS=\"%s\"", phonenumber);
-	if ( SIM_sendCMD(SIM_Txbuff, (uint8_t*)">", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, SIM_TIMEOUT_LONG) != SIM_RES_MSG)	return 0;
+	if ( SIM_sendCMD(SIM_Txbuff, (uint8_t*)">", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, SIM_TIMEOUT_MEDIUM) != SIM_RES_MSG)	return 0;
 
 	Msg[msglen++] = 0x1A;
 	HAL_UART_Transmit(SIM_UART, Msg, msglen, 0xFFFF);
-	if ( SIM_checkMsg((uint8_t*)"OK", SIM_TIMEOUT_LONG) != SIM_RES_MSG)	{
+	if ( SIM_checkMsg((uint8_t*)"OK", SIM_TIMEOUT_SHORT) != SIM_RES_MSG)	{
 		MarkAsReadData_SIM();
 		return 0;
 	}

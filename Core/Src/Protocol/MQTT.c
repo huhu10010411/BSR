@@ -14,7 +14,13 @@
 #include "String_process.h"
 #include "usart.h"
 #include "main.h"
+#include "user_lcd1604.h"
 
+
+#define MQTT_TIMEOUT_LONG	5000
+#define MQTT_TIMEOUT_MEDIUM	2000
+#define MQTT_TIMEOUT_SHORT	800
+#define MQTT_TIMEOUT_VERYSHORT	400
 
 #define MQTT_TXBUFF_SIZE   512
 
@@ -141,9 +147,9 @@ uint8_t MQTT_receive(uint8_t *MQTTbuff,uint16_t buffsize)
 
 uint8_t MQTT_connected(void)
 {
-	if ( SIM_sendCMD((uint8_t*)"AT+CMQTTDISC?", (uint8_t*)"+CMQTTDISC: 0,0", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 2000) == SIM_RES_MSG )
+	if ( SIM_sendCMD((uint8_t*)"AT+CMQTTDISC?", (uint8_t*)"+CMQTTDISC: 0,0", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 1000) == SIM_RES_MSG )
 	{
-		mySIM.mqttServer.connect = 1;
+//		mySIM.mqttServer.connect = 1;
 //		Serial_log_string("MQTT is connected to broker\r\n");
 		return 1;
 	}
@@ -162,14 +168,14 @@ uint8_t startMQTT(void) {
     // Implement starting MQTT logic
 	// Return 1 on success, 0 on failure
 
-	uint8_t check = SIM_sendCMD((uint8_t*)"AT+CMQTTSTART", (uint8_t*)"+CMQTTSTART: 0", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 2000);
+	uint8_t check = SIM_sendCMD((uint8_t*)"AT+CMQTTSTART", (uint8_t*)"+CMQTTSTART: 0", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, MQTT_TIMEOUT_SHORT);
 	if ( check == SIM_RES_MSG )	{
 //		Serial_log_string("start MQTT success\r\n");
 		return 1;
 	}
 
-	check = SIM_sendCMD((uint8_t*)"AT+CMQTTSTART", (uint8_t*)"ERROR", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 2000);
-	if ( check == SIM_RES_MSG )	{
+//	check = SIM_sendCMD((uint8_t*)"AT+CMQTTSTART", (uint8_t*)"ERROR", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 2000);
+	else if ( check == SIM_ERROR )	{
 //		Serial_log_string("start MQTT success\r\n");
 		return 1;
 	}
@@ -180,16 +186,27 @@ uint8_t startMQTT(void) {
 
 uint8_t acquireMQTTclient (uint8_t *clientID){
 	sprintf((char*)MQTT_Txbuff,"AT+CMQTTACCQ=0,\"%s\"", clientID);
-	if (SIM_sendCMD(MQTT_Txbuff, (uint8_t*)"OK", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 1000)== SIM_RES_MSG)	{
+	if (SIM_sendCMD(MQTT_Txbuff, (uint8_t*)"OK", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, MQTT_TIMEOUT_MEDIUM)== SIM_RES_MSG)	{
 //		Serial_log_string("acquire MQTT client success\r\n");
 		return 1;
 	}
 //	Serial_log_string("acquire MQTT client fail\r\n");
     return 0;
 }
+
+//uint8_t checkacquireMQTTclient (uint8_t *clientID){
+//
+//	sprintf((char*)MQTT_Txbuff,"AT+CMQTTACCQ?");
+//	if (SIM_sendCMD(MQTT_Txbuff, clientID, ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, MQTT_TIMEOUT_MEDIUM)== SIM_RES_MSG)	{
+////		Serial_log_string("acquire MQTT client success\r\n");
+//		return 1;
+//	}
+////	Serial_log_string("acquire MQTT client fail\r\n");
+//    return 0;
+//}
 uint8_t releaseMQTTclient (void)
 {
-	if (SIM_sendCMD((uint8_t*)"AT+CMQTTREL=0", (uint8_t*)"OK", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 2000)) {
+	if (SIM_sendCMD((uint8_t*)"AT+CMQTTREL=0", (uint8_t*)"OK", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, MQTT_TIMEOUT_SHORT) == SIM_RES_MSG) {
 //		Serial_log_string("release MQTT client success\r\n");
 		return 1;
 	}
@@ -201,20 +218,25 @@ uint8_t configureMQTT() {
     // Return 1 on success, 0 on failure
 	uint8_t wtplen = strlen(mySIM.mqttServer.willtopic);
 	sprintf((char*)MQTT_Txbuff,"AT+CMQTTWILLTOPIC=0,%d",wtplen);
-	if (SIM_sendCMD(MQTT_Txbuff, (uint8_t*)'>', ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 2000) != SIM_RES_MSG)	return 0;
+	if (SIM_sendCMD(MQTT_Txbuff, (uint8_t*)">", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, MQTT_TIMEOUT_SHORT) != SIM_RES_MSG)	return 0;
 
 	sprintf((char*)MQTT_Txbuff,"%s",mySIM.mqttServer.willtopic);
-	if (SIM_sendCMD(MQTT_Txbuff, (uint8_t*)"OK", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 1000) != SIM_RES_MSG)	return 0;
+	if (SIM_sendCMD(MQTT_Txbuff, (uint8_t*)"OK", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, MQTT_TIMEOUT_SHORT) != SIM_RES_MSG)	return 0;
 
 	uint8_t wmsglen = strlen((char*)mySIM.mqttServer.willmsg);
 	sprintf((char*)MQTT_Txbuff,"AT+CMQTTWILLMSG=0,%d,1",wmsglen);
-	if (SIM_sendCMD(MQTT_Txbuff, (uint8_t*)'>', ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 2000)!= SIM_RES_MSG)	return 0;
+	if (SIM_sendCMD(MQTT_Txbuff, (uint8_t*)">", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, MQTT_TIMEOUT_SHORT)!= SIM_RES_MSG)	return 0;
 
 	sprintf((char*)MQTT_Txbuff,"%s",mySIM.mqttServer.willmsg);
-	if (SIM_sendCMD(MQTT_Txbuff, (uint8_t*)"OK", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 2000)!= SIM_RES_MSG)	return 0;
+	if (SIM_sendCMD(MQTT_Txbuff, (uint8_t*)"OK", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, MQTT_TIMEOUT_SHORT)!= SIM_RES_MSG)	return 0;
 
-	sprintf((char*)MQTT_Txbuff,"AT+CMQTTCFG=\"checkUTF8\",0,0");
-	if (! SIM_sendCMD(MQTT_Txbuff, (uint8_t*)"OK", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 1000))	return 0;
+//	if (! SIM_sendCMD((uint8_t*)"AT+CMQTTCFG?", (uint8_t*)"+CMQTTCFG: 0,0", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, MQTT_TIMEOUT_SHORT))	{
+
+		sprintf((char*)MQTT_Txbuff,"AT+CMQTTCFG=\"checkUTF8\",0,0");
+		if (! SIM_sendCMD(MQTT_Txbuff, (uint8_t*)"OK", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, MQTT_TIMEOUT_SHORT))	return 0;
+//	}
+
+
 
 //	Serial_log_string("config MQTT success\r\n");
     return 1;
@@ -224,7 +246,7 @@ uint8_t sendConnectMessage() {
     // Implement sending the CONNECT message
     // Return 1 on success, 0 on failure
 	sprintf((char*)MQTT_Txbuff,"AT+CMQTTCONNECT=0,\"%s:%d\",%d,1",mySIM.mqttServer.host,mySIM.mqttServer.port,mySIM.mqttClient.keepAliveInterval);
-	if (SIM_sendCMD(MQTT_Txbuff, (uint8_t*)"+CMQTTCONNECT: 0,0", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 2000) == SIM_RES_MSG)
+	if (SIM_sendCMD(MQTT_Txbuff, (uint8_t*)"+CMQTTCONNECT: 0,0", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, MQTT_TIMEOUT_LONG) == SIM_RES_MSG)
 	{
 //		Serial_log_string("Connect to broker success\r\n");
 		return 1;
@@ -236,17 +258,23 @@ uint8_t sendConnectMessage() {
 
 uint8_t MQTT_checkNWavailable (void)
 {
+	static uint8_t count = 0;
 	if ( !SIM_checkCMD(SIM_CMD_SIMCARD_PIN) ) {
-		static uint32_t tick = 0;
-		if (HAL_GetTick() - tick > 20000) {
-			tick = HAL_GetTick();
+		count++;
+		if (count == 10)	{
+			count = 0;
+			LCD_Clear();
+			LCD_GotoXY(3,0);
+			LCD_Print("NO SIM");
+
 			SIM_sendCMD( (uint8_t*)"AT+CRESET", (uint8_t*)"OK", ENABLE_SIM_CHECKRES,
 						ENABLE_MARKASREAD, SIM_TIMEOUT_LONG);
 //			Serial_log_string("Reset Module\r\n");
-			HAL_Delay(1000);
+			HAL_Delay(10000);
 		}
 		return 1;
 	}
+	count = 0;
 
 	if ( !SIM_checkCMD(SIM_CMD_STA_CSQ) ) {
 		return 2;
@@ -263,7 +291,10 @@ uint8_t MQTT_checkNWavailable (void)
 }
 uint8_t MQTT_connect()
 {
-
+	if ( SIM_sendCMD((uint8_t*)"AT+CMQTTCONNECT?", (uint8_t*)mySIM.mqttServer.host, ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, MQTT_TIMEOUT_MEDIUM) == SIM_RES_MSG )	{
+		mySIM.mqttServer.connect = 1;
+		return 1;
+	}
 	if ( MQTT_checkNWavailable() )  return 0;
 
 	if ( !startMQTT() )		return 0;
@@ -277,13 +308,16 @@ uint8_t MQTT_connect()
 		else
 		{
 			releaseMQTTclient();
+			SIM_sendCMD((uint8_t*)"AT+CMQTTSTOP", (uint8_t*)"+CMQTTSTOP: 0",
+						ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, MQTT_TIMEOUT_SHORT);
 		}
 		return 0;
+
 	}
 	if ( !(configureMQTT()) )		return 0;
 
 	if ( !sendConnectMessage() )	{
-		HAL_Delay(200);
+		HAL_Delay(500);
 		return 0;
 	}
 
@@ -295,12 +329,12 @@ uint8_t MQTT_connect()
 uint8_t MQTT_disconnect ()
 {
 	if (SIM_sendCMD((uint8_t*)"AT+CMQTTDISC=0,120", (uint8_t*)"+CMQTTDISC: 0,0",
-			ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 2000) != SIM_RES_MSG )		return 0;
+			ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, MQTT_TIMEOUT_SHORT) != SIM_RES_MSG )		return 0;
 
 	if ( !releaseMQTTclient() )		return 0;
 
 	if (SIM_sendCMD((uint8_t*)"AT+CMQTTSTOP", (uint8_t*)"+CMQTTSTOP: 0",
-			ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 2000) != SIM_RES_MSG )		return 0;
+			ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, MQTT_TIMEOUT_SHORT) != SIM_RES_MSG )		return 0;
 
 	mySIM.mqttServer.connect = 0;
 	return 1;
@@ -311,21 +345,25 @@ uint8_t MQTT_publish(uint8_t *topic, uint8_t *msg, uint16_t msglen)
 	uint8_t topiclen= (uint8_t) strlen((char*)topic);
 	sprintf((char*)MQTT_Txbuff,"AT+CMQTTTOPIC=0,%d", topiclen);
 
-	if (SIM_sendCMD(MQTT_Txbuff, (uint8_t*)'>', ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 2000)!= SIM_RES_MSG)	return 0;
+	if (SIM_sendCMD(MQTT_Txbuff, (uint8_t*)">", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, MQTT_TIMEOUT_SHORT)!= SIM_RES_MSG)	return 0;
 
-	if (SIM_sendCMD(topic, (uint8_t*)"OK", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 2000)!= SIM_RES_MSG)		return 0;
+	HAL_UART_Transmit(&huart1, topic , topiclen, 0xFFFF);
+	check = SIM_checkMsg((uint8_t*)"OK", MQTT_TIMEOUT_VERYSHORT);
+	MarkAsReadData_SIM();
+	if (check != SIM_RES_MSG)	return 0;
+//	if (SIM_sendCMD(topic, (uint8_t*)"OK", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 2000) != SIM_RES_MSG)		return 0;
 
 	sprintf((char*)MQTT_Txbuff,"AT+CMQTTPAYLOAD=0,%d",msglen);
 
-	if (SIM_sendCMD(MQTT_Txbuff, (uint8_t*)'>', ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 2000)!= SIM_RES_MSG)	return 0;
+	if (SIM_sendCMD(MQTT_Txbuff, (uint8_t*)">", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, MQTT_TIMEOUT_SHORT)!= SIM_RES_MSG)	return 0;
 
 	HAL_UART_Transmit(&huart1, msg, msglen, 0xFFFF);
-	check = SIM_checkMsg((uint8_t*)"OK", 2000);
+	check = SIM_checkMsg((uint8_t*)"OK", MQTT_TIMEOUT_VERYSHORT);
 	MarkAsReadData_SIM();
 	if (check != SIM_RES_MSG)	return 0;
 
 	if (SIM_sendCMD((uint8_t*)"AT+CMQTTPUB=0,1,60", (uint8_t*)"+CMQTTPUB: 0,0",
-			ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 2000)!= SIM_RES_MSG)	return 0;
+			ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, MQTT_TIMEOUT_SHORT)!= SIM_RES_MSG)	return 0;
 
 	return 1;
 }
@@ -334,12 +372,19 @@ uint8_t MQTT_subcribe (uint8_t *topic)
 	uint8_t topiclen = strlen ((char*)topic);
 
 	sprintf((char*)MQTT_Txbuff,"AT+CMQTTSUBTOPIC=0,%d,1",topiclen);
-	if (SIM_sendCMD(MQTT_Txbuff, (uint8_t*)'>', ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 2000)!= SIM_RES_MSG)	return 0;
+	if (SIM_sendCMD(MQTT_Txbuff, (uint8_t*)">", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, MQTT_TIMEOUT_SHORT)!= SIM_RES_MSG)	return 0;
 
-	if (SIM_sendCMD(topic, (uint8_t*)"OK", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 2000)!= SIM_RES_MSG)		return 0;
+	if (SIM_sendCMD(topic, (uint8_t*)"OK", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, MQTT_TIMEOUT_VERYSHORT) != SIM_RES_MSG)		return 0;
 
-	if (SIM_sendCMD((uint8_t*)"AT+CMQTTSUB=0", (uint8_t*)"+CMQTTSUB: 0,0", ENABLE_SIM_CHECKRES,ENABLE_MARKASREAD, 2000)!= SIM_RES_MSG) 	return 0;
+	if (SIM_sendCMD((uint8_t*)"AT+CMQTTSUB=0", (uint8_t*)"+CMQTTSUB: 0,0", ENABLE_SIM_CHECKRES,ENABLE_MARKASREAD, MQTT_TIMEOUT_SHORT)!= SIM_RES_MSG) 	return 0;
 
+	return 1;
+}
+
+uint8_t checkSubcribe(uint8_t *topic)
+{
+	if (SIM_sendCMD((uint8_t*)"AT+CMQTTSUB?", topic,
+			ENABLE_SIM_CHECKRES,ENABLE_MARKASREAD, MQTT_TIMEOUT_SHORT) != SIM_RES_MSG) 	return 0;
 	return 1;
 }
 

@@ -112,12 +112,12 @@ typedef struct {
     char *willtopic;
     uint8_t *willmsg;
     uint16_t port;
-    uint8_t connect;
+    uint8_t volatile connect;
 } mqttServer_t;
 
 typedef struct {
-    char *username;
-    char *pass;
+//    char *username;
+//    char *pass;
     char *clientID;
     unsigned short keepAliveInterval;
 } mqttClient_t;
@@ -141,7 +141,7 @@ typedef struct {
 } sim_t;
 
 typedef struct {
-    sim_t sim;
+//    sim_t sim;
     mqttServer_t mqttServer;
     mqttClient_t mqttClient;
     mqttReceive_t mqttReceive;

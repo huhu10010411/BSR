@@ -31,7 +31,9 @@ Core/Src/Protocol/MQTT.o: ../Core/Src/Protocol/MQTT.c \
  D:/blue_pill_pj/Station/Core/Inc/Device/SIM.h \
  ../Core/Inc/String_process.h ../Core/Inc/usart.h ../Core/Inc/main.h \
  ../Core/Inc/linkedlist.h \
- D:/blue_pill_pj/Station/Core/Inc/Device/Contactor.h ../Core/Inc/main.h
+ D:/blue_pill_pj/Station/Core/Inc/Device/Contactor.h ../Core/Inc/main.h \
+ ../Core/Inc/user_lcd1604.h ../Core/Inc/gpio.h ../Core/Inc/user_delay.h \
+ ../Core/Inc/tim.h
 D:/blue_pill_pj/Station/Core/Inc/Protocol/MQTT.h:
 ../Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f1xx.h:
 ../Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f103xb.h:
@@ -68,3 +70,7 @@ D:/blue_pill_pj/Station/Core/Inc/Device/SIM.h:
 ../Core/Inc/linkedlist.h:
 D:/blue_pill_pj/Station/Core/Inc/Device/Contactor.h:
 ../Core/Inc/main.h:
+../Core/Inc/user_lcd1604.h:
+../Core/Inc/gpio.h:
+../Core/Inc/user_delay.h:
+../Core/Inc/tim.h:

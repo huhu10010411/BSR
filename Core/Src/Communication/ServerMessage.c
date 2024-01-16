@@ -109,11 +109,15 @@ uint16_t Serialize_SSnodedata(uint8_t* Serial_buff, DATA_t dataType)
 			break;
 		case DATA_PERIOD:
 			Serial_buff[buff_len++] = current->SSnode.SSnode_ID;
-			Serial_buff[buff_len++]= current->SSnode.Battery;
-			Serial_buff[buff_len++]= ( current->SSnode.V_value >> 8 ) & 0xFF;
-			Serial_buff[buff_len++]= current->SSnode.V_value & 0xFF;
+			Serial_buff[buff_len++] = current->SSnode.Battery;
+			Serial_buff[buff_len++] = ( current->SSnode.V_value >> 8 ) & 0xFF;
+			Serial_buff[buff_len++] = current->SSnode.V_value & 0xFF;
+//			Serial_buff[buff_len++] = current->SSnode.sensorMode;
 			break;
 		case DATA_NETWREADY:
+			if (current->SSnode.sensorMode == SLEEP) 	{
+				current->SSnode.Sensor_state = SENSOR_DEACTIVE;
+			}
 			Serial_buff[buff_len++] = current->SSnode.SSnode_ID;
 			Serial_buff[buff_len++]= current->SSnode.Sensor_state;
 			break;
@@ -126,8 +130,8 @@ uint16_t Serialize_SSnodedata(uint8_t* Serial_buff, DATA_t dataType)
 //				current->SSnode.sentDatacalib = 1;
 			}
 			break;
-		case DATA_AFTERCALIB:
-			break;
+//		case DATA_AFTERCALIB:
+//			break;
 		default:
 			break;
 		}
@@ -145,8 +149,9 @@ uint8_t Serialize_Stationdata( uint8_t *Buffer, DATA_t dataType)
 			Buffer[buff_len++] = myStation.stID;
 			Buffer[buff_len++] = (uint8_t)( ( myStation.stCurrent >> 8 ) & 0xFF);
 			Buffer[buff_len++] = (uint8_t)( myStation.stCurrent & 0xFF );
-			Buffer[buff_len++] = (uint8_t)( ( myStation.stVoltage >> 8 ) & 0xFF );
-			Buffer[buff_len++] = (uint8_t)( myStation.stVoltage & 0xFF );
+			Buffer[buff_len++] = (uint8_t) (myStation.MBAstate);
+//			Buffer[buff_len++] = (uint8_t)( ( myStation.stVoltage >> 8 ) & 0xFF );
+//			Buffer[buff_len++] = (uint8_t)( myStation.stVoltage & 0xFF );
 			break;
 		case DATA_NETWREADY:
 			Buffer[buff_len++] = myStation.stID;
@@ -167,10 +172,10 @@ uint8_t Serialize_Stationdata( uint8_t *Buffer, DATA_t dataType)
 			Buffer[buff_len++] = (uint8_t)( ( myStation.stVoltage >> 8 ) & 0xFF );
 			Buffer[buff_len++] = (uint8_t)( myStation.stVoltage & 0xFF );
 			break;
-		case DATA_AFTERCALIB:
-			Buffer[buff_len++] = (uint8_t)( ( myStation.stCurrent >> 8 ) & 0xFF);
-			Buffer[buff_len++] = (uint8_t)( myStation.stCurrent & 0xFF );
-			break;
+//		case DATA_AFTERCALIB:
+//			Buffer[buff_len++] = (uint8_t)( ( myStation.stCurrent >> 8 ) & 0xFF);
+//			Buffer[buff_len++] = (uint8_t)( myStation.stCurrent & 0xFF );
+//			break;
 		case DATA_MBA_STATE:
 			Buffer[buff_len++] = (uint8_t) (myStation.MBAstate);
 		case DATA_STEP_REACH_LIMIT:
@@ -249,18 +254,18 @@ uint8_t Serialize_addtionaldata( CMD_t CMDtype, uint8_t *Getbuffer, uint8_t *dat
 
 uint8_t Register2Server()
 {
-	uint8_t *tmp_databuff = (uint8_t*)malloc(256*sizeof(uint8_t));
+	uint8_t tmp_databuff[128] ;
 	uint16_t pack_len = 0;
 	// Create package
 	pack_len = createPack(PACKT_REGISTER, DATA_REGISTER, CMD_NONE );
 	if ( !pack_len ) {
-		free(tmp_databuff);
+//		free(tmp_databuff);
 		return 0;
 		}
 	 //Convert Register data to temp buffer
 	uint8_t datalen= Serialize_Data(tmp_databuff, DATA_REGISTER );
 	if ( !datalen )	{
-		free(tmp_databuff);
+//		free(tmp_databuff);
 		return 0;
 	}
 	// Add Register data  temp buffer to package
@@ -269,11 +274,11 @@ uint8_t Register2Server()
 	pack_len += addCRCtoPack( Pack_buff, pack_len );
 	// Publish
 	if ( MQTT_publish((uint8_t*)TOPIC_PUB, Pack_buff, pack_len) )	{
-		Serial_log_string(" Sent \"Register\" message to server\r\n");
-		free(tmp_databuff);
+//		Serial_log_string(" Sent \"Register\" message to server\r\n");
+//		free(tmp_databuff);
 		return 1;
 	}
-	free(tmp_databuff);
+//	free(tmp_databuff);
 	return 0;
 }
 
@@ -406,6 +411,7 @@ ID_t getDatalatest(uint8_t *Msg, uint16_t Msg_len)
 		mySIM.sms.GetStation.datalength = 0;
 		while (datapos < crcpos)
 		{
+			// Get value to SMS return buffer
 			len = sprintf((char*)(mySIM.sms.GetStation.data + mySIM.sms.GetStation.datalength), "I%d:", Msg[datapos]);
 			mySIM.sms.GetStation.datalength += len;
 			datapos++;
@@ -416,23 +422,30 @@ ID_t getDatalatest(uint8_t *Msg, uint16_t Msg_len)
 		}
 		break;
 	case ID_SENSOR:
-		len = sprintf((char*)(mySIM.sms.GetStation.data + mySIM.sms.GetStation.datalength), "V%d:", Msg[datapos]);
-		mySIM.sms.GetStation.datalength += len;
+		// Get value to SMS return buffer
+		mySIM.sms.GetSensor.datalength = 0;
+		while (datapos < crcpos){
+
+		len = sprintf((char*)(mySIM.sms.GetSensor.data + mySIM.sms.GetSensor.datalength), "V%d", Msg[datapos]);
+		mySIM.sms.GetSensor.datalength += len;
 		datapos++;
 		switch (Msg[datapos++])	{
 		case V_p:
-
+			len = sprintf((char*)(mySIM.sms.GetSensor.data + mySIM.sms.GetSensor.datalength), "p:");
+			mySIM.sms.GetSensor.datalength += len;
 			break;
 		case V_na:
-
+			len = sprintf((char*)(mySIM.sms.GetSensor.data + mySIM.sms.GetSensor.datalength), "na:");
+			mySIM.sms.GetSensor.datalength += len;
 			break;
 		default:
 			break;
 		}
 		tmpvalue = buff2twobyte(Msg+ datapos);
-		len = sprintf((char*)(mySIM.sms.GetStation.data + mySIM.sms.GetStation.datalength), "%d;", tmpvalue);
+		len = sprintf((char*)(mySIM.sms.GetSensor.data + mySIM.sms.GetSensor.datalength), "%d,", tmpvalue);
 		mySIM.sms.GetStation.datalength += len;
 		datapos += 2;
+		}
 		break;
 	default:
 		break;
@@ -501,7 +514,8 @@ void processingComingMsg(uint8_t *Msg, uint16_t Msg_len, uint8_t stID)
 	CMD_t cmdType;
 	DATA_t dataREStype;
 	ID_t idType;
-	uint32_t calibtime;
+	uint32_t tmptime;
+	_RTC tmpRTC;
 
 	switch (packageType) {
 		case PACKT_DATA:
@@ -517,21 +531,21 @@ void processingComingMsg(uint8_t *Msg, uint16_t Msg_len, uint8_t stID)
 					//Get data from package
 					idType = getDatalatest(Msg, Msg_len);
 
-					switch (checkStationMode())	{
-					case STATION_MODE_CALIB:
-						triggerTaskflag(TASK_CTRL_STEPMOR, FLAG_EN);
-						break;
-					case STATION_MODE_NORMAL:
+//					switch (checkStationMode())	{
+//					case STATION_MODE_CALIB:
+//						triggerTaskflag(TASK_CTRL_STEPMOR, FLAG_EN);
+//						break;
+//					case STATION_MODE_NORMAL:
 						if (idType == ID_SENSOR)	{
 							triggerSMSreturn(SMS_CMD_GET_SENSOR, SMS_CMD_ENABLE);
 						}
 						else if (idType == ID_STATION)	{
 							triggerSMSreturn(SMS_CMD_GET_STATION, SMS_CMD_DISABLE);
 						}
-						break;
-					default:
-						break;
-					}
+//						break;
+//					default:
+//						break;
+//					}
 					break;
 				default:
 					break;
@@ -545,9 +559,9 @@ void processingComingMsg(uint8_t *Msg, uint16_t Msg_len, uint8_t stID)
 					break;
 				case CMD_START_CALIB:
 					// Get time in package
-					 calibtime = buff2Fourbyte( Msg+ (uint8_t)ADDDATA_POS );
-					_RTC tmpRTC;
-					epochtine2RTC(calibtime, &tmpRTC);
+					 tmptime = buff2Fourbyte( Msg+ (uint8_t)ADDDATA_POS );
+
+					epochtine2RTC(tmptime, &tmpRTC);
 					// Save Calib time
 					myStation.calibTime.hour = tmpRTC.Hour;
 					myStation.calibTime.min = tmpRTC.Min;
@@ -565,6 +579,20 @@ void processingComingMsg(uint8_t *Msg, uint16_t Msg_len, uint8_t stID)
 					//Get data to control step motor
 					getCtrlStepinfor(Msg);
 					triggerTaskflag(TASK_CTRL_STEPMOR, FLAG_EN);
+					break;
+				case CMD_SYN_SENSOR:
+					// get synchronize time and set
+					tmptime = buff2Fourbyte( Msg+ (uint8_t)ADDDATA_POS );
+
+					epochtine2RTC(tmptime, &tmpRTC);
+//					// Save Calib time
+//					myStation.calibTime.hour = tmpRTC.Hour;
+//					myStation.calibTime.min = tmpRTC.Min;
+//					myStation.calibTime.sec = tmpRTC.Sec;
+					// Set alarm for Calib
+					sync_flag = 1;
+					DS3231_ClearAlarm1();
+					DS3231_SetAlarm1(ALARM_MODE_ALL_MATCHED, tmpRTC.Date, tmpRTC.Hour, tmpRTC.Min, tmpRTC.Sec);
 					break;
 				default:
 					break;
@@ -587,15 +615,15 @@ void processingComingMsg(uint8_t *Msg, uint16_t Msg_len, uint8_t stID)
 			case DATA_CALIB:
 				if ( Msg[RESSTATUS_POS] == RES_OK)	{
 //					markassentDatacalibsuccess();
-//					triggerTaskflag(TASK_SEND_DATACALIB, FLAG_DIS);
+					triggerTaskflag(TASK_SEND_DATACALIB, FLAG_DIS);
 				}
 				break;
-			case DATA_AFTERCALIB:
-				if ( Msg[RESSTATUS_POS] == RES_OK)	{
-					triggerTaskflag(TASK_SEND_DATAAFTERCALIB, FLAG_DIS);
-					setStationMode(STATION_MODE_NORMAL);
-				}
-				break;
+//			case DATA_AFTERCALIB:
+//				if ( Msg[RESSTATUS_POS] == RES_OK)	{
+//					triggerTaskflag(TASK_SEND_DATAAFTERCALIB, FLAG_DIS);
+////					setStationMode(STATION_MODE_NORMAL);
+//				}
+//				break;
 			default:
 				break;
 			}

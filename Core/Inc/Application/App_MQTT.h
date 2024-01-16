@@ -10,11 +10,15 @@
 
 
 #include "SIM.h"
-//#include "main.h"
+#include "main.h"
 
 
 void initApp_MQTT();
 
 void processApp_MQTT(void);
+
+uint8_t checkSensorMode(sensor_mode_t mode);
+
+uint8_t checkSensorState(sensor_state_t state);
 
 #endif /* INC_APPLICATION_APP_MQTT_H_ */

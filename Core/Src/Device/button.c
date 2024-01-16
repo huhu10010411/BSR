@@ -360,6 +360,7 @@ void buttonUP_handler()
 	case STEP_VAL_CONTROL:
 		// increase step value
 		increaseStepchange();
+		setClearflag(ENABLE);
 		break;
 	case STEP_DIR_CONTROL:
 		Step_toggleDir();

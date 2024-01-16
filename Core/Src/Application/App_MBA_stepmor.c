@@ -43,7 +43,9 @@ void processingApp_MBA_stepmor()
 		default:
 			break;
 		}
-
+		// trigger task send output data to server
+		triggerTaskflag(TASK_SEND_DATAPERIOD, FLAG_EN);
+		// disable task control step motor
 		triggerTaskflag(TASK_CTRL_STEPMOR, FLAG_DIS);
 	}
 }

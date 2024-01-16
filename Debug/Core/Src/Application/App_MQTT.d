@@ -29,9 +29,9 @@ Core/Src/Application/App_MQTT.o: ../Core/Src/Application/App_MQTT.c \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h \
- D:/blue_pill_pj/Station/Core/Inc/Protocol/MQTT.h ../Core/Inc/main.h \
- ../Core/Inc/linkedlist.h \
+ ../Core/Inc/main.h ../Core/Inc/linkedlist.h \
  D:/blue_pill_pj/Station/Core/Inc/Device/Contactor.h \
+ D:/blue_pill_pj/Station/Core/Inc/Protocol/MQTT.h \
  D:/blue_pill_pj/Station/Core/Inc/Communication/Serial_log.h \
  D:/blue_pill_pj/Station/Core/Inc/Communication/stationCMD.h \
  D:/blue_pill_pj/Station/Core/Inc/Communication/ServerMessage.h \
@@ -68,10 +68,10 @@ D:/blue_pill_pj/Station/Core/Inc/Device/SIM.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h:
-D:/blue_pill_pj/Station/Core/Inc/Protocol/MQTT.h:
 ../Core/Inc/main.h:
 ../Core/Inc/linkedlist.h:
 D:/blue_pill_pj/Station/Core/Inc/Device/Contactor.h:
+D:/blue_pill_pj/Station/Core/Inc/Protocol/MQTT.h:
 D:/blue_pill_pj/Station/Core/Inc/Communication/Serial_log.h:
 D:/blue_pill_pj/Station/Core/Inc/Communication/stationCMD.h:
 D:/blue_pill_pj/Station/Core/Inc/Communication/ServerMessage.h:

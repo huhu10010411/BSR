@@ -75,18 +75,20 @@ void processApp_SMS(void)
 		triggerTaskflag(TASK_SEND_GETSENSOR, FLAG_EN);
 	}
 // Check for return SMS
-//	if (checkSMSreturn(SMS_CMD_CTRL_ON))	{
-//		SMSreturn(SMS_CMD_CTRL_ON);
-//	}
+	if (checkSMSreturn(SMS_CMD_CTRL_ON))	{
+		SMSreturn(SMS_CMD_CTRL_ON);
+		triggerSMSreturn(SMS_CMD_CTRL_ON, SMS_CMD_DISABLE);
+	}
 //	if (checkSMSreturn(SMS_CMD_CTRL_OFF))	{
 //		SMSreturn(SMS_CMD_CTRL_OFF);
 //	}
 //	if (checkSMSreturn(SMS_CMD_CTRL_INC))	{
 //		SMSreturn(SMS_CMD_CTRL_INC);
 //	}
-//	if (checkSMSreturn(SMS_CMD_CTRL_DEC))	{
-//		SMSreturn(SMS_CMD_CTRL_DEC);
-//	}
+	if (checkSMSreturn(SMS_CMD_CTRL_DEC))	{
+		SMSreturn(SMS_CMD_CTRL_DEC);
+		triggerSMSreturn(SMS_CMD_CTRL_DEC, SMS_CMD_DISABLE);
+	}
 //	if (checkSMSreturn(SMS_CMD_CTRL_CALIB))	{
 //		SMSreturn(SMS_CMD_CTRL_CALIB);
 //	}

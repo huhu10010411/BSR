@@ -45,8 +45,6 @@ typedef enum {
 	STATION_MODE_CONFIG
 }Station_Mode_t;
 
-
-
 typedef struct {
 	uint8_t hour;
 	uint8_t min;
@@ -87,6 +85,7 @@ typedef struct {
 	s_list  * ssNode_list;
 	Task_handle_t task;
 	Calibtime_t calibTime;
+
 }Station_t;
 
 
@@ -96,7 +95,10 @@ typedef struct {
 /* USER CODE BEGIN EC */
 extern Station_t myStation;
 extern SIM_t mySIM;
-#define STATION_T_INIT	{STATION_MODE_NORMAL, 8, 300, 0, MBA_ON, 0, NULL, TASK_FLAG_INIT}
+
+extern uint8_t volatile sync_flag;
+
+#define STATION_T_INIT	{0, 8, 300, 0, 1, 0, NULL, TASK_FLAG_INIT}
 
 #define ACTIVE		0x01
 #define DEACTIVE	0x02
@@ -118,8 +120,8 @@ extern SIM_t mySIM;
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
-void setStationMode(Station_Mode_t mode);
-Station_Mode_t checkStationMode();
+//void setStationMode(Station_Mode_t mode);
+//Station_Mode_t checkStationMode();
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/

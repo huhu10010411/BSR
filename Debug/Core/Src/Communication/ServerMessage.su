@@ -25,4 +25,4 @@
 ../Core/Src/Communication/ServerMessage.c:472:14:getCtrlStepinfor	24	static
 ../Core/Src/Communication/ServerMessage.c:493:6:markassentDatacalibsuccess	16	static
 ../Core/Src/Communication/ServerMessage.c:506:6:processingComingMsg	64	static
-../Core/Src/Communication/ServerMessage.c:663:6:testProcessingMsg	16	static
+../Core/Src/Communication/ServerMessage.c:666:6:testProcessingMsg	16	static

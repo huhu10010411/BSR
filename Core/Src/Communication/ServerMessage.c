@@ -112,7 +112,7 @@ uint16_t Serialize_SSnodedata(uint8_t* Serial_buff, DATA_t dataType)
 			Serial_buff[buff_len++] = current->SSnode.Battery;
 			Serial_buff[buff_len++] = ( current->SSnode.V_value >> 8 ) & 0xFF;
 			Serial_buff[buff_len++] = current->SSnode.V_value & 0xFF;
-//			Serial_buff[buff_len++] = current->SSnode.sensorMode;
+			Serial_buff[buff_len++] = current->SSnode.sensorMode;
 			break;
 		case DATA_NETWREADY:
 			if (current->SSnode.sensorMode == SLEEP) 	{
@@ -645,6 +645,9 @@ void processingComingMsg(uint8_t *Msg, uint16_t Msg_len, uint8_t stID)
 					triggerSMSreturn(SMS_CMD_CTRL_DEC, ENABLE);
 				}
 				break;
+//			case CMD_SMS_CALIB:
+//
+//				break;
 			default:
 				break;
 			}

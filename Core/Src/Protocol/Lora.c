@@ -14,6 +14,7 @@
 //#include "Serial_log.h"
 #include  "usart.h"
 #include "main.h"
+//#include "App_MQTT.h"
 
 #define __LORA_UART 		&huart3
 #define __LORA_DMA_UART 	&hdma_usart3_rx
@@ -42,6 +43,7 @@ void initLora()
 //	__LORA_UART = huart;
 //	__LORA_DMA_UART = hdma;
 	enableReceiveDMAtoIdle_Lora();
+
 }
 
 void initmyLora()
@@ -254,13 +256,14 @@ uint8_t Lora_Setmode(sensor_mode_t mode, uint8_t checkres)
 	default :
 		break;
 	}
-
-
 	return 0;
 }
 void testLora_receive (void)
 {
-//	Lora_Setmode(SLEEP,1);
+//	Lora_Setmode(WAKE,1);
+
+	Lora_Setmode(SLEEP, 1);
+
 //	uint8_t modemsg [] = {0x01, 0x04, 0x53,0x30, 0x39, 0x31, 0x04, 0x01, 0x00, 0x00, 0xD6};
 //	uint8_t msg[] = { 0x01, 0x04, 0x53, 0x30, 0x39, 0x31, 0x07, 0x02, 0x05, 0xD6, 0x09, 0x02, 0x02, 0xF4, 0x00, 0x64};
 //	Lora_receive(modemsg, 20);

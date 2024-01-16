@@ -54,7 +54,6 @@
 #include "App_Display.h"
 #include "App_MBA_stepmor.h"
 
-
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -108,6 +107,9 @@ uint16_t volatile  adccount = 0;
 uint32_t curtick = 0;
 uint32_t pretick = 0;
 
+uint32_t turnonMBAtick = 0;
+uint8_t turnonMBAflag = 0;
+
 uint8_t flag = 0;
 //uint8_t debug = 0;
 
@@ -148,6 +150,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 			DS3231_ClearAlarm1();
 			// Set Mode Measure for Sensor node
 			Lora_Setmode(MEASURE, 0);
+			turnonMBAtick = HAL_GetTick();
+			turnonMBAflag = 1;
 			// Change to Calib mode
 //			setStationMode(STATION_MODE_CALIB);
 			triggerTaskflag(TASK_START_CALIB, FLAG_EN);
@@ -272,7 +276,7 @@ int main(void)
   myStation.ssNode_list = SSnode_list;
 
   // Get station ID from flash
-//  Flash_Write_NUM(FLASH_PAGE_127, 0x04);
+//  Flash_Write_NUM(FLASH_PAGE_127, 0x01);
   myStation.stID = (uint8_t)Flash_Read_NUM(FLASH_PAGE_127);
 
 	mySIM.mqttServer.host = "tcp://broker.hivemq.com";
@@ -299,8 +303,8 @@ int main(void)
 	// MBA and Step motor
 	initApp_MBA_stepmor();
 	// Lora
-//	initLora(&huart2, &hdma_usart2_rx);
-	initmyLora();
+	initLora();
+//	initmyLora();
 	// GPS
 	initSerial_CFG();
 //	myGPS.getFlag = 0;
@@ -351,10 +355,17 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-//	  testLora_receive();
+//
 //	  testProcessingMsg();
 //	  Serial_log_testOperation();
 //	  SIM_checkOperation();
+//	  if (flag == 0)	{
+//		  testLora_receive();
+//		  flag = 1;
+//	  }
+//		if (checkSensorMode(WAKE) == 1)	{
+//			Lora_Setmode(MEASURE,1);
+//		}
 //	  MQTT_testReceive();
 //	  LCD_GotoXY(1, 1);
 //	  LCD_Print("hello");
@@ -363,6 +374,15 @@ int main(void)
 //			  SIM_sendCMD((uint8_t*)"AT+CMGD=1,1", (uint8_t*)"OK",
 //			  					ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 1000);
 //	  }
+
+//	  testLora_receive();
+	  // Turn on MBA after calib 15s
+	  if (turnonMBAflag)	{
+		  if (HAL_GetTick() - turnonMBAtick >= 15000)	{
+			  myStation.MBAstate = switchContactor(MBA_ON);
+			  turnonMBAflag = 0;
+		  }
+	  }
 	  processApp_MCU();
 	  processingApp_display();
 	  processApp_MQTT();

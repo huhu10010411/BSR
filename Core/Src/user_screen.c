@@ -173,7 +173,7 @@ void Screen_Monitor_Node(uint8_t ID, uint8_t mode, uint16_t battery, uint8_t typ
         LCD_Print("Status: ON");
     }
     LCD_GotoXY(1, 2);
-    sprintf(buffer,"Battery: %01d.%02dV", battery/100, battery%100);
+    sprintf(buffer,"Battery: %03d%%", battery);
     LCD_Print(buffer);
     LCD_GotoXY(0, 3);
 	LCD_SendData(_LCD_CHAR_DOWN);

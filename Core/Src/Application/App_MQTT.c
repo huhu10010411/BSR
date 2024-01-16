@@ -80,7 +80,7 @@ void processApp_MQTT(void)
 //	 Check for connection to MQTT broker
 	if (HAL_GetTick() - tickconnect > 30000)	{
 		MQTT_connected();
-		if (!checkSubcribe((uint8_t*)TOPIC_SUB))	{
+		if (!checkSubcribe((uint8_t*)TOPIC_SUB) )	{
 			triggerTaskflag(TASK_SUBSCRIBE, FLAG_EN);
 		}
 		tickconnect = HAL_GetTick();
@@ -95,7 +95,7 @@ void processApp_MQTT(void)
 		// Check for subscribe to broker
 		if (  checkTaskflag(TASK_SUBSCRIBE) ) {
 
-			if ( MQTT_subcribe( (uint8_t*)TOPIC_SUB ) ) {
+			if ( MQTT_subcribe( (uint8_t*)TOPIC_SUB ) && MQTT_subcribe((uint8_t*)TOPIC_SUB_BROADCAST)) {
 				triggerTaskflag(TASK_SUBSCRIBE, FLAG_DIS);
 			}
 		}

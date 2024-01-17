@@ -14,6 +14,7 @@
 //#include "Serial_log.h"
 #include  "usart.h"
 #include "main.h"
+#include "Task.h"
 //#include "App_MQTT.h"
 
 #define __LORA_UART 		&huart3
@@ -183,6 +184,7 @@ void Lora_receive(uint8_t *Msg, uint8_t msglen)
 
 	// If Sensor ID is  not already saved in the Sensor node list
 	if ( !isIDExist(id) )		{
+		triggerTaskflag(TASK_REGISTER, FLAG_EN);
 		SensorNode_t newSensor = SENSORNODE_T_INIT;
 		newSensor.SSnode_ID = id;
 		switch (flag)	{

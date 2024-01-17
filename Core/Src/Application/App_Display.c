@@ -11,23 +11,21 @@
 #include "button.h"
 #include "Step_motor.h"
 #include "MQTT.h"
-#include "main.h"
 
-static DISPLAY_MODE_t *__MY_DISPLAY_MODE;
-static _RTC *__MY_RTC;
-//static Station_t *myStation;
+
+
+DISPLAY_MODE_t myDisplayMode = HOME;
+
+uint8_t displayCalibFlag = 0;
+uint8_t displayAfterSwitchoff = 0;
 
 static uint16_t countdowntime;
 static _RTC switchtime;
 
-void initApp_Display (DISPLAY_MODE_t *myDisplayMode, _RTC *myRTC)
+void initApp_Display ()
 {
 	LCD_Init();
-	__MY_DISPLAY_MODE = myDisplayMode;
-	__MY_RTC = myRTC;
-//	myStation = myStation;
-	Screen_Init(__MY_RTC);
-
+	Screen_Init(&myRTC);
 }
 
 void display_SensorX(uint8_t sensorIndex)
@@ -43,7 +41,7 @@ void display_SensorX(uint8_t sensorIndex)
 	{
 		current = current->next;
 	}
-	Screen_Monitor_Node(current->SSnode.SSnode_ID, current->SSnode.Sensor_state,
+	Screen_Monitor_Node(current->SSnode.SSnode_ID, current->SSnode.sensorMode,
 			current->SSnode.Battery, current->SSnode.V_type, current->SSnode.V_value);
 
 }
@@ -63,7 +61,7 @@ void processingApp_display()
 		LCD_Clear();
 		setClearflag(DISABLE);
 	}
-	switch(*__MY_DISPLAY_MODE)	{
+	switch(myDisplayMode)	{
 		case HOME:
 			Screen_Home_Origin(myStation.stID, MQTT_getConnectflag());
 			break;
@@ -73,6 +71,8 @@ void processingApp_display()
 			Screen_Home_Sync(countdowntime);
 			break;
 		case AFTER_SW_OFF:
+			displayCalibFlag = 0;
+			displayAfterSwitchoff = 0;
 			Screen_Home_Calib();
 			break;
 		case MONITOR:

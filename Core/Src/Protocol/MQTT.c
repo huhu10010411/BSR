@@ -258,23 +258,23 @@ uint8_t sendConnectMessage() {
 
 uint8_t MQTT_checkNWavailable (void)
 {
-	static uint8_t count = 0;
+//	static uint8_t count = 0;
 	if ( !SIM_checkCMD(SIM_CMD_SIMCARD_PIN) ) {
-		count++;
-		if (count == 10)	{
-			count = 0;
-			LCD_Clear();
-			LCD_GotoXY(3,0);
-			LCD_Print("NO SIM");
-
-			SIM_sendCMD( (uint8_t*)"AT+CRESET", (uint8_t*)"OK", ENABLE_SIM_CHECKRES,
-						ENABLE_MARKASREAD, SIM_TIMEOUT_LONG);
-//			Serial_log_string("Reset Module\r\n");
-			HAL_Delay(10000);
-		}
+//		count++;
+//		if (count == 10)	{
+//			count = 0;
+//			LCD_Clear();
+//			LCD_GotoXY(3,0);p
+//			LCD_Print("NO SIM");
+//
+//			SIM_sendCMD( (uint8_t*)"AT+CRESET", (uint8_t*)"OK", ENABLE_SIM_CHECKRES,
+//						ENABLE_MARKASREAD, SIM_TIMEOUT_LONG);
+////			Serial_log_string("Reset Module\r\n");
+//			HAL_Delay(10000);
+//		}
 		return 1;
 	}
-	count = 0;
+//	count = 0;
 
 	if ( !SIM_checkCMD(SIM_CMD_STA_CSQ) ) {
 		return 2;
@@ -369,12 +369,20 @@ uint8_t MQTT_publish(uint8_t *topic, uint8_t *msg, uint16_t msglen)
 }
 uint8_t MQTT_subcribe (uint8_t *topic)
 {
-	uint8_t topiclen = strlen ((char*)topic);
+	uint8_t topicbuff[30];
+	uint8_t topiclen;
+	if (strcmp((char*)topic, (char*)TOPIC_SUB) == 0)	{
+		topiclen = sprintf((char*)topicbuff, "%s%d",topic,myStation.stID);
+	}
+	else {
+		strcpy((char*)topicbuff,(char*)topic);
+		topiclen = strlen((char*)topic);
+	}
 
 	sprintf((char*)MQTT_Txbuff,"AT+CMQTTSUBTOPIC=0,%d,1",topiclen);
 	if (SIM_sendCMD(MQTT_Txbuff, (uint8_t*)">", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, MQTT_TIMEOUT_SHORT)!= SIM_RES_MSG)	return 0;
 
-	if (SIM_sendCMD(topic, (uint8_t*)"OK", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, MQTT_TIMEOUT_VERYSHORT) != SIM_RES_MSG)		return 0;
+	if (SIM_sendCMD(topicbuff, (uint8_t*)"OK", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, MQTT_TIMEOUT_VERYSHORT) != SIM_RES_MSG)		return 0;
 
 	if (SIM_sendCMD((uint8_t*)"AT+CMQTTSUB=0", (uint8_t*)"+CMQTTSUB: 0,0", ENABLE_SIM_CHECKRES,ENABLE_MARKASREAD, MQTT_TIMEOUT_SHORT)!= SIM_RES_MSG) 	return 0;
 

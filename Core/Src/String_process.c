@@ -15,7 +15,7 @@ uint8_t* isWordinBuff(uint8_t *databuff,uint16_t buff_size, uint8_t *word)
 	uint8_t wordlen = strlen((char*)word);
 	for (uint16_t i = 0; i< buff_size - wordlen + 1; i++)
 	{
-		if (!memcmp(databuff +i,word,wordlen))
+		if ( memcmp(databuff +i,word,wordlen) == 0)
 		{
 			return databuff+ i;
 		}

@@ -15,10 +15,6 @@
 #include <stdio.h>
 #include "Task.h"
 
-//static Station_t *myStation;
-//static SIM_t *mySim;
-//uint8_t buffer [10];
-//uint8_t stIDbuffer[] = {1,2,3,4,5};
 uint32_t tickconnect =0;
 uint32_t tickreg = 0;
 uint32_t ticksend = 0;

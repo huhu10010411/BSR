@@ -111,9 +111,9 @@ void Serial_CFG_Callback(uint16_t Size)
 	 * Processing data
 	 */
 
-	if (isWordinBuff(Rxbuff_CFG, Size, (uint8_t*)"MCFG+")) {
-		isSerialConfig = 1;
-	}
+//	if (isWordinBuff(Rxbuff_CFG, Size, (uint8_t*)"MCFG+")) {
+//		isSerialConfig = 1;
+//	}
 }
 
 

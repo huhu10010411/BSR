@@ -31,10 +31,10 @@ Core/Src/Device/button.o: ../Core/Src/Device/button.c \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h \
  ../Core/Inc/linkedlist.h D:/blue_pill_pj/Station/Core/Inc/Device/SIM.h \
- D:/blue_pill_pj/Station/Core/Inc/Device/Contactor.h ../Core/Inc/main.h \
- ../Core/Inc/linkedlist.h ../Core/Inc/Task.h ../Core/Inc/user_lcd1604.h \
- ../Core/Inc/gpio.h ../Core/Inc/user_delay.h ../Core/Inc/tim.h \
- ../Core/Inc/user_a4988.h \
+ D:/blue_pill_pj/Station/Core/Inc/Device/Contactor.h \
+ ../Core/Inc/linkedlist.h ../Core/Inc/main.h ../Core/Inc/Task.h \
+ ../Core/Inc/user_lcd1604.h ../Core/Inc/gpio.h ../Core/Inc/user_delay.h \
+ ../Core/Inc/tim.h ../Core/Inc/user_a4988.h \
  D:/blue_pill_pj/Station/Core/Inc/Device/Step_motor.h
 D:/blue_pill_pj/Station/Core/Inc/Device/button.h:
 D:/blue_pill_pj/Station/Core/Inc/Application/App_Display.h:
@@ -72,8 +72,8 @@ D:/blue_pill_pj/Station/Core/Inc/Device/ds3231.h:
 ../Core/Inc/linkedlist.h:
 D:/blue_pill_pj/Station/Core/Inc/Device/SIM.h:
 D:/blue_pill_pj/Station/Core/Inc/Device/Contactor.h:
-../Core/Inc/main.h:
 ../Core/Inc/linkedlist.h:
+../Core/Inc/main.h:
 ../Core/Inc/Task.h:
 ../Core/Inc/user_lcd1604.h:
 ../Core/Inc/gpio.h:

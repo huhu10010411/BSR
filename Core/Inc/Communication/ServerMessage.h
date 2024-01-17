@@ -92,7 +92,7 @@ uint8_t Register2Server(void);
 
 uint8_t sendCMDtoServer( CMD_t CMDtype,uint8_t *SMSdatabuffer, uint16_t datalen, MBA_state_t MBAstate,
 		Stepmotor_dir_t Stepm_DIR, Stepmotor_change_mode_t Stepm_changeMode,
-		uint8_t Stepm_changeValue );
+		uint16_t Stepm_changeValue );
 uint8_t sendData2Server( DATA_t dataType);
 
 uint8_t sendRespond(CMD_t cmdType, RES_STATUS_t resStatus);

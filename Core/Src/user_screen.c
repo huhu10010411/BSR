@@ -77,7 +77,7 @@ void Screen_Home_Origin(uint8_t ID, uint8_t connectflag)
     LCD_SendData(_LCD_CHAR_RIGHT);
 }
 
-void Screen_Home_Sync(uint8_t time)
+void Screen_Home_Sync(uint16_t time)
 {
     char buffer[20];
 //	LCD_Clear();
@@ -87,7 +87,9 @@ void Screen_Home_Sync(uint8_t time)
     LCD_GotoXY(1, 1);
     LCD_Print("OFF after:");
     LCD_GotoXY(6, 2);
-    sprintf(buffer, "%03ds", time);
+    LCD_Print("     ");
+    LCD_GotoXY(6, 2);
+    sprintf(buffer, "%ds", time);
     LCD_Print(buffer);
     LCD_GotoXY(5, 3);
     LCD_SendData(_LCD_CHAR_LEFT);
@@ -168,9 +170,12 @@ void Screen_Monitor_Node(uint8_t ID, uint8_t mode, uint16_t battery, uint8_t typ
     LCD_GotoXY(1, 1);
     if (mode == 2)
     {
-        LCD_Print("Status: OFF");
+        LCD_Print("Status: Measure");
     } else if (mode == 1){
-        LCD_Print("Status: ON");
+        LCD_Print("Status: Wake   ");
+    }
+    else {
+    	LCD_Print("Status: Sleep  ");
     }
     LCD_GotoXY(1, 2);
     sprintf(buffer,"Battery: %03d%%", battery);
@@ -178,12 +183,34 @@ void Screen_Monitor_Node(uint8_t ID, uint8_t mode, uint16_t battery, uint8_t typ
     LCD_GotoXY(0, 3);
 	LCD_SendData(_LCD_CHAR_DOWN);
     LCD_GotoXY(1, 3);
-    if (type == 1)
-    {
-        sprintf(buffer,"VP: %01d.%02dV", voltage/100, voltage%100);
-    } else {
-        sprintf(buffer,"VNA: %01d.%02dV", voltage/100, voltage%100);
+    voltage = voltage*2;
+    if (voltage == 0){
+    	 if (type == 1)
+			{
+				sprintf(buffer,"VP:      ");
+			} else {
+				sprintf(buffer,"VNA:      ");
+			}
     }
+    else if (voltage < 3000){
+    	voltage = 3000 - voltage;
+    	 if (type == 1)
+    	    {
+    	        sprintf(buffer,"VP: -%01d.%02dV", voltage/1000, voltage%1000);
+    	    } else {
+    	        sprintf(buffer,"VNA: -%01d.%02dV", voltage/1000, voltage%1000);
+    	    }
+    }
+    else {
+    	voltage = voltage - 3000;
+		 if (type == 1)
+			{
+				sprintf(buffer,"VP: %01d.%02dV", voltage/1000, voltage%1000);
+			} else {
+				sprintf(buffer,"VNA: %01d.%02dV", voltage/1000, voltage%1000);
+			}
+    }
+
     LCD_Print(buffer);
 }
 

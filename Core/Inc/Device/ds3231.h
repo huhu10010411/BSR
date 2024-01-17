@@ -66,6 +66,8 @@ typedef struct
   uint8_t Sec;
 } _RTC;
 
+extern _RTC myRTC;
+
 void DS3231_Init(I2C_HandleTypeDef *handle);
 time_t RTC2epochtime (_RTC *RTCtime);
 void epochtine2RTC(time_t epochtime,  _RTC *myRTC);

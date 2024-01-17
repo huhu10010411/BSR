@@ -8,7 +8,10 @@
 #include "stm32f1xx_hal.h"
 #include "ds3231.h"
 
+
 #define DS3231_ADDR  (0x68 << 1)
+
+_RTC myRTC;
 
 I2C_HandleTypeDef *i2c;
 
@@ -219,5 +222,13 @@ uint16_t getCountdowntime(uint8_t hour, uint8_t min, uint8_t sec)
 	if ( hour < curRTC.Hour || hour - curRTC.Hour > 18 )	return 0;
 	if ( hour == curRTC.Hour && min < curRTC.Min ) return 0;
 	if ( hour == curRTC.Hour && min == curRTC.Min && sec < curRTC.Sec )	return 0;
-	return (hour- curRTC.Hour)*3600 + (min - curRTC.Min)*60 + (sec - curRTC.Sec);
+	if( hour == curRTC.Hour && min == curRTC.Min)	{
+		return sec - curRTC.Sec;
+	}
+	if (hour == curRTC.Hour)	{
+		return (min - curRTC.Min)*60 + (60 - curRTC.Sec + sec);
+	}
+	else
+		return (hour -curRTC.Hour - 1)* 3600 + (60 - curRTC.Min + min)*60 + (60 - curRTC.Sec + sec);
+
 }

@@ -14,7 +14,7 @@
 
 
 
-void initButton(DISPLAY_MODE_t *displaymode);
+void initButton();
 
 void buttonMENU_handler();
 

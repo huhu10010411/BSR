@@ -9,7 +9,7 @@
 #define INC_APPLICATION_APP_DISPLAY_H_
 
 #include "ds3231.h"
-#include "main.h"
+
 typedef enum	{
 	HOME,
 	COUNTDOWN_SW_OFF,
@@ -22,6 +22,8 @@ typedef enum	{
 	STEP_VAL_CONTROL,
 	STEP_DIR_CONTROL
 }DISPLAY_MODE_t;
+
+extern DISPLAY_MODE_t myDisplayMode;
 
 typedef enum {
 	CONTROL_STEP,
@@ -40,8 +42,10 @@ typedef enum {
 	STEP_CONFIRM
 }STEP_t;
 
+extern uint8_t displayCalibFlag;
+extern uint8_t displayAfterSwitchoff;
 
-void initApp_Display (DISPLAY_MODE_t *myDisplayMode, _RTC *myRTC);
+void initApp_Display ();
 
 void processingApp_display();
 

@@ -135,8 +135,8 @@ SIM_res_t SIM_checkMsg(uint8_t *Msg, uint16_t timeout)
 	uint8_t dataSize = 0;
 	uint8_t tmpdbuff[SIM_BUFF_SIZE];
 	memset( (char*)tmpdbuff, 0, SIM_BUFF_SIZE );
-//	HAL_Delay(timeout);
 	timeout /= 10;
+
 	for (uint16_t i = 0; i < 10 ; i++)
 	{
 		HAL_Delay(timeout);
@@ -144,54 +144,29 @@ SIM_res_t SIM_checkMsg(uint8_t *Msg, uint16_t timeout)
 		if (head > tail)
 		{
 			dataSize = head - tail ;
-//			tmpdbuff = (uint8_t*)malloc(dataSize*sizeof(uint8_t));
 
 			memcpy(tmpdbuff, SIMbuff + tail, dataSize);
 		}
 		else if ( head < tail )
 		{
 			dataSize = SIM_BUFF_SIZE - tail + head ;
-//		 	tmpdbuff = (uint8_t*)malloc(dataSize*sizeof(uint8_t));
 			memcpy(tmpdbuff, SIMbuff + tail, SIM_BUFF_SIZE - tail);
 			memcpy(tmpdbuff + SIM_BUFF_SIZE - tail, SIMbuff, head);
 		}
 		else {
-			return res;
-//			continue;
+			continue;
 		}
 
 		if ( isWordinBuff(tmpdbuff, dataSize, Msg) != NULL )	{
-//			Serial_log_string("msg: ");
-//			Serial_log_buffer(tmpdbuff, dataSize);
-//			Serial_log_string(";");
-//			Serial_log_string("\ntail: ");
-//			Serial_log_number(tail);
-//			Serial_log_string(" ");
-//			Serial_log_string("\nhead: ");
-//			Serial_log_number(head);
-//			Serial_log_string(" ");
 			return SIM_RES_MSG ;
 		}
 
 		if ( isWordinBuff(tmpdbuff, dataSize, (uint8_t*)"ERROR") != NULL )	{
-//			Serial_log_string("err: ");
-//			Serial_log_buffer(tmpdbuff, dataSize);
-//			Serial_log_string(";");
 			return SIM_ERROR ;
 		}
 	}
 
-//	Serial_log_string("no res: ");
-//	Serial_log_buffer(tmpdbuff, dataSize);
-//	Serial_log_string(";");
-//	Serial_log_string("\ntail: ");
-//	Serial_log_number(tail);
-//	Serial_log_string(" ");
-//	Serial_log_string("\nhead: ");
-//	Serial_log_number(head);
-//	Serial_log_string(" ");
  	return res;
-
 }
 
 SIM_res_t SIM_sendCMD(uint8_t *cmd, uint8_t *checkResMsg, uint8_t CheckResENorDIS, uint8_t ENorDISmarkasread, uint32_t timeout)
@@ -225,6 +200,7 @@ uint8_t SIM_checkCMD (SIM_CMD_t cmd)
 //	SIM_res_t check;
 	switch (cmd) {
 		case SIM_CMD_SIMCARD_PIN:
+
 			if ( SIM_sendCMD( (uint8_t*)"AT+CPIN?", (uint8_t*)"+CPIN: READY", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, SIM_TIMEOUT_SHORT) == SIM_RES_MSG ) {
 				res = 1;
 //				Serial_log_string("SIM card READY\r\n");

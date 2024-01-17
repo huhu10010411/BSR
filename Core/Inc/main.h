@@ -96,6 +96,8 @@ typedef struct {
 extern Station_t myStation;
 extern SIM_t mySIM;
 
+
+
 extern uint8_t volatile sync_flag;
 
 #define STATION_T_INIT	{0, 8, 300, 0, 1, 0, NULL, TASK_FLAG_INIT}
@@ -136,9 +138,6 @@ void Error_Handler(void);
 #define RTC_ALARM_TRIGGER_EXTI_IRQn EXTI0_IRQn
 #define MBA_CONTACTOR_Pin GPIO_PIN_4
 #define MBA_CONTACTOR_GPIO_Port GPIOA
-#define LIMIT_SWITCH_MAX_Pin GPIO_PIN_5
-#define LIMIT_SWITCH_MAX_GPIO_Port GPIOA
-#define LIMIT_SWITCH_MAX_EXTI_IRQn EXTI9_5_IRQn
 #define MOTOR_DIR_Pin GPIO_PIN_7
 #define MOTOR_DIR_GPIO_Port GPIOA
 #define MOTOR_STEP_Pin GPIO_PIN_0

@@ -34,8 +34,8 @@ Core/Src/Application/App_Display.o: ../Core/Src/Application/App_Display.c \
  ../Core/Inc/user_delay.h ../Core/Inc/tim.h \
  D:/blue_pill_pj/Station/Core/Inc/Device/ds3231.h ../Core/Inc/i2c.h \
  D:/blue_pill_pj/Station/Core/Inc/Application/App_Display.h \
- ../Core/Inc/main.h D:/blue_pill_pj/Station/Core/Inc/Device/button.h \
- ../Core/Inc/linkedlist.h \
+ D:/blue_pill_pj/Station/Core/Inc/Device/button.h \
+ ../Core/Inc/linkedlist.h ../Core/Inc/main.h \
  D:/blue_pill_pj/Station/Core/Inc/Device/Step_motor.h \
  D:/blue_pill_pj/Station/Core/Inc/Protocol/MQTT.h
 ../Core/Inc/user_screen.h:
@@ -78,8 +78,8 @@ D:/blue_pill_pj/Station/Core/Inc/Device/Contactor.h:
 D:/blue_pill_pj/Station/Core/Inc/Device/ds3231.h:
 ../Core/Inc/i2c.h:
 D:/blue_pill_pj/Station/Core/Inc/Application/App_Display.h:
-../Core/Inc/main.h:
 D:/blue_pill_pj/Station/Core/Inc/Device/button.h:
 ../Core/Inc/linkedlist.h:
+../Core/Inc/main.h:
 D:/blue_pill_pj/Station/Core/Inc/Device/Step_motor.h:
 D:/blue_pill_pj/Station/Core/Inc/Protocol/MQTT.h:

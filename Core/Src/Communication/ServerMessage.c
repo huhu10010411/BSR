@@ -4,19 +4,20 @@
  *  Created on: Nov 7, 2023
  *      Author: Admin
  */
-#include "stm32f1xx_hal.h"
+//#include "stm32f1xx_hal.h"
 #include "ServerMessage.h"
 #include "linkedlist.h"
-#include "string.h"
+#include <string.h>
 #include "ds3231.h"
 #include "time.h"
-#include "stdio.h"
-#include "Serial_log.h"
+#include <stdio.h>
+//#include "Serial_log.h"
 #include "crc32.h"
 #include "Task.h"
 #include "String_process.h"
 #include "Validation.h"
 #include "main.h"
+#include "App_Display.h"
 
 
 
@@ -24,9 +25,6 @@
 #define DATABUFF_MAXLEN		512
 uint8_t Pack_buff [PACKBUFF_MAXLEN];
 
-//static Station_t *myStation;
-//static SMS_t *mySIM.sms;
-//static SIM_t *mySIM;
 
 void initServerMsg ()
 {
@@ -150,8 +148,8 @@ uint8_t Serialize_Stationdata( uint8_t *Buffer, DATA_t dataType)
 			Buffer[buff_len++] = (uint8_t)( ( myStation.stCurrent >> 8 ) & 0xFF);
 			Buffer[buff_len++] = (uint8_t)( myStation.stCurrent & 0xFF );
 			Buffer[buff_len++] = (uint8_t) (myStation.MBAstate);
-//			Buffer[buff_len++] = (uint8_t)( ( myStation.stVoltage >> 8 ) & 0xFF );
-//			Buffer[buff_len++] = (uint8_t)( myStation.stVoltage & 0xFF );
+			Buffer[buff_len++] = (uint8_t)( ( myStation.stVoltage >> 8 ) & 0xFF );
+			Buffer[buff_len++] = (uint8_t)( myStation.stVoltage & 0xFF );
 			break;
 		case DATA_NETWREADY:
 			Buffer[buff_len++] = myStation.stID;
@@ -162,8 +160,8 @@ uint8_t Serialize_Stationdata( uint8_t *Buffer, DATA_t dataType)
 			Buffer[buff_len++] = (uint8_t)( ( myStation.stCurrent >> 8 ) & 0xFF);
 			Buffer[buff_len++] = (uint8_t)( myStation.stCurrent & 0xFF );
 			Buffer[buff_len++] = (uint8_t)(myStation.MBAstate);
-//			Buffer[buff_len++] = (uint8_t)( ( myStation.stVoltage >> 8 ) & 0xFF );
-//			Buffer[buff_len++] = (uint8_t)( myStation.stVoltage & 0xFF );
+			Buffer[buff_len++] = (uint8_t)( ( myStation.stVoltage >> 8 ) & 0xFF );
+			Buffer[buff_len++] = (uint8_t)( myStation.stVoltage & 0xFF );
 			break;
 		case DATA_CALIB:
 			Buffer[buff_len++] = myStation.stID;
@@ -204,7 +202,7 @@ uint8_t addDatatoPack(uint8_t *Pack, uint16_t Pack_len, uint8_t *Databuff, uint1
 }
 
 uint8_t Serialize_addtionaldata( CMD_t CMDtype, uint8_t *Getbuffer, uint8_t *databuffer, uint16_t datalen, MBA_state_t MBAstate, Stepmotor_dir_t Stepm_DIR,
-							Stepmotor_change_mode_t Stepm_changeMode, uint8_t Stepm_changeValue )
+							Stepmotor_change_mode_t Stepm_changeMode, uint16_t Stepm_changeValue )
 {
 	uint8_t buff_len = 0;
 	switch ( CMDtype ) {
@@ -230,8 +228,10 @@ uint8_t Serialize_addtionaldata( CMD_t CMDtype, uint8_t *Getbuffer, uint8_t *dat
 			Getbuffer[buff_len++] = Stepm_DIR ;
 			// Second byte: Change Percentage/Step (1 byte)
 			Getbuffer[buff_len++] = Stepm_changeMode;
-			// Third byte : Value
-			Getbuffer[buff_len++] = Stepm_changeValue;
+			// Third + fourth byte : Value
+//			Getbuffer[buff_len++] = Stepm_changeValue;
+			Getbuffer[buff_len++] = (uint8_t)( ( Stepm_changeValue >> 8 ) & 0xFF);
+			Getbuffer[buff_len++] = (uint8_t)( Stepm_changeValue & 0xFF );
 			// Station ID list + time delay + phone number
 			memcpy(Getbuffer + buff_len, databuffer, datalen);
 			buff_len += datalen;
@@ -284,7 +284,7 @@ uint8_t Register2Server()
 
 uint8_t sendCMDtoServer(CMD_t CMDtype, uint8_t *SMSdatabuffer, uint16_t datalen, MBA_state_t MBAstate,
 		Stepmotor_dir_t Stepm_DIR, Stepmotor_change_mode_t Stepm_changeMode,
-		uint8_t Stepm_changeValue)
+		uint16_t Stepm_changeValue)
 {
 	uint8_t  pack_len = 0;
 	pack_len = createPack(PACKT_CMD, DATA_NONE, CMDtype );
@@ -522,31 +522,30 @@ void processingComingMsg(uint8_t *Msg, uint16_t Msg_len, uint8_t stID)
 			// Check data type
 			dataType = checkDatatype(Msg);
 			switch (dataType) {
+
 				case DATA_STATUS:
+
 					//Get status data from package
 					getDataStatus(Msg, Msg_len);
+
+					// Trigger return SMS task
 					triggerSMSreturn(SMS_CMD_GET_STATUS, SMS_CMD_ENABLE);
 					break;
+
 				case DATA_LATEST:
+
 					//Get data from package
 					idType = getDatalatest(Msg, Msg_len);
 
-//					switch (checkStationMode())	{
-//					case STATION_MODE_CALIB:
-//						triggerTaskflag(TASK_CTRL_STEPMOR, FLAG_EN);
-//						break;
-//					case STATION_MODE_NORMAL:
-						if (idType == ID_SENSOR)	{
-							triggerSMSreturn(SMS_CMD_GET_SENSOR, SMS_CMD_ENABLE);
-						}
-						else if (idType == ID_STATION)	{
-							triggerSMSreturn(SMS_CMD_GET_STATION, SMS_CMD_DISABLE);
-						}
-//						break;
-//					default:
-//						break;
-//					}
+					// Trigger return SMS task
+					if (idType == ID_SENSOR)	{
+						triggerSMSreturn(SMS_CMD_GET_SENSOR, SMS_CMD_ENABLE);
+					}
+					else if (idType == ID_STATION)	{
+						triggerSMSreturn(SMS_CMD_GET_STATION, SMS_CMD_DISABLE);
+					}
 					break;
+
 				default:
 					break;
 			}
@@ -560,16 +559,19 @@ void processingComingMsg(uint8_t *Msg, uint16_t Msg_len, uint8_t stID)
 				case CMD_START_CALIB:
 					// Get time in package
 					 tmptime = buff2Fourbyte( Msg+ (uint8_t)ADDDATA_POS );
-
 					epochtine2RTC(tmptime, &tmpRTC);
+
 					// Save Calib time
 					myStation.calibTime.hour = tmpRTC.Hour;
 					myStation.calibTime.min = tmpRTC.Min;
 					myStation.calibTime.sec = tmpRTC.Sec;
+
 					// Set alarm for Calib
 					DS3231_ClearAlarm1();
 					DS3231_SetAlarm1(ALARM_MODE_ALL_MATCHED, tmpRTC.Date, tmpRTC.Hour, tmpRTC.Min, tmpRTC.Sec);
 
+					// Set display mode
+					displayCalibFlag = 1;
 					break;
 				case CMD_CTRL_MBA:
 					//Get MBA state from package and switch contactor
@@ -581,16 +583,12 @@ void processingComingMsg(uint8_t *Msg, uint16_t Msg_len, uint8_t stID)
 					triggerTaskflag(TASK_CTRL_STEPMOR, FLAG_EN);
 					break;
 				case CMD_SYN_SENSOR:
-					// get synchronize time and set
+					// get synchronize time and set alarm
 					tmptime = buff2Fourbyte( Msg+ (uint8_t)ADDDATA_POS );
-
 					epochtine2RTC(tmptime, &tmpRTC);
-//					// Save Calib time
-//					myStation.calibTime.hour = tmpRTC.Hour;
-//					myStation.calibTime.min = tmpRTC.Min;
-//					myStation.calibTime.sec = tmpRTC.Sec;
-					// Set alarm for Calib
+					// set synchronize sensor flag
 					sync_flag = 1;
+					// Set alarm for synchronize
 					DS3231_ClearAlarm1();
 					DS3231_SetAlarm1(ALARM_MODE_ALL_MATCHED, tmpRTC.Date, tmpRTC.Hour, tmpRTC.Min, tmpRTC.Sec);
 					break;
@@ -614,22 +612,15 @@ void processingComingMsg(uint8_t *Msg, uint16_t Msg_len, uint8_t stID)
 				break;
 			case DATA_CALIB:
 				if ( Msg[RESSTATUS_POS] == RES_OK)	{
-//					markassentDatacalibsuccess();
 					triggerTaskflag(TASK_SEND_DATACALIB, FLAG_DIS);
 				}
 				break;
-//			case DATA_AFTERCALIB:
-//				if ( Msg[RESSTATUS_POS] == RES_OK)	{
-//					triggerTaskflag(TASK_SEND_DATAAFTERCALIB, FLAG_DIS);
-////					setStationMode(STATION_MODE_NORMAL);
-//				}
-//				break;
 			default:
 				break;
 			}
 			break;
 		case PACKT_RESCMD:
-			cmdType = checkCMDtype(Msg);
+			cmdType = Msg[3];
 			switch (cmdType)	{
 			case CMD_CTRL_MBA:
 				if (Msg[RESSTATUS_POS] == RES_OK)	{
@@ -645,9 +636,9 @@ void processingComingMsg(uint8_t *Msg, uint16_t Msg_len, uint8_t stID)
 					triggerSMSreturn(SMS_CMD_CTRL_DEC, ENABLE);
 				}
 				break;
-//			case CMD_SMS_CALIB:
-//
-//				break;
+			case CMD_SMS_CALIB:
+
+				break;
 			default:
 				break;
 			}
@@ -666,7 +657,7 @@ void processingComingMsg(uint8_t *Msg, uint16_t Msg_len, uint8_t stID)
 void testProcessingMsg(void)
 {
 	uint8_t Msg[] = {0x1e, 0xf6, 0x01, 0xdc, 0x18, 0x21, 0xc5};
-	Serial_log_number(myStation.task.register2server);
+//	Serial_log_number(myStation.task.register2server);
 	processingComingMsg(Msg, 7, 0x1e);
-	Serial_log_number(myStation.task.register2server);
+//	Serial_log_number(myStation.task.register2server);
 }

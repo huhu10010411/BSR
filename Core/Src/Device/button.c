@@ -11,11 +11,10 @@
 #include  "user_lcd1604.h"
 #include "user_a4988.h"
 #include "Step_motor.h"
-#include "main.h"
+#include "App_Display.h"
 
 
 
-static DISPLAY_MODE_t *__MY_DISPLAY_MODE;
 static CONTROL_t curControl = CONTROL_STEP;
 static SWITCH_t curSwitch = SW_ON;
 static uint8_t volatile curMonitor = 0;
@@ -28,13 +27,10 @@ static uint8_t volatile clearflag = 0;
 
 static STEP_t stepValorDir = STEP_VAL;
 
-//, s_list *mylist, Station_t *myStation
 
-void initButton(DISPLAY_MODE_t *displaymode)
+void initButton()
 {
-	__MY_DISPLAY_MODE = displaymode;
-//	myStation.ssNode_list = mylist;
-//	myStation = myStation;
+
 }
 
 void setStepValorDir (STEP_t ValorDir)
@@ -46,35 +42,6 @@ STEP_t getStepValorDir()
 {
 	return stepValorDir;
 }
-
-//void setClearPosflag()
-//{
-//	clearPosflag = 1;
-//}
-///* @func : getClearPosflag
-// * @return : 1 flag is set
-// * 			0 flag is not set
-// */
-//uint8_t getClearPosflag()
-//{
-//	return clearPosflag;
-//}
-///*
-// * @func: getClearPos
-// * @argument: XorY
-// * @return:	XorY == 0 : Xpos
-// * 			XorY == other Y
-// *
-// */
-//uint8_t getClearPos(uint8_t XorY)
-//{
-//	if (XorY == 0 )	{
-//		return clearPosX;
-//	}
-//	else {
-//		return clearPosY;
-//	}
-//}
 
 SWITCH_t getCurswitch()
 {
@@ -147,46 +114,51 @@ void setcurMonitor(uint8_t index)
 
 void buttonMENU_handler()
 {
-	switch(*__MY_DISPLAY_MODE)	{
+	switch(myDisplayMode)	{
 	case HOME:
-		*__MY_DISPLAY_MODE = MONITOR;
-		setcurMonitor(0);
+		if (displayCalibFlag)	{
+			myDisplayMode = COUNTDOWN_SW_OFF;
+		}
+		else {
+			myDisplayMode = MONITOR;
+			setcurMonitor(0);
+		}
 		setClearflag(ENABLE);
 		break;
 	case COUNTDOWN_SW_OFF:
-		*__MY_DISPLAY_MODE = MONITOR;
+		myDisplayMode = MONITOR;
 		setClearflag(ENABLE);
 		break;
 	case AFTER_SW_OFF:
-		*__MY_DISPLAY_MODE = MONITOR;
+		myDisplayMode = MONITOR;
 		setClearflag(ENABLE);
 		break;
 	case MONITOR:
-		*__MY_DISPLAY_MODE = MENU_CONTROL;
+		myDisplayMode = MENU_CONTROL;
 		setClearflag(ENABLE);
 		break;
 	case MENU_CONTROL:
-		*__MY_DISPLAY_MODE = HOME;
+		myDisplayMode = HOME;
 		setClearflag(ENABLE);
 		break;
 	case VOLTAGE_CONTROL:
-		*__MY_DISPLAY_MODE = HOME;
+		myDisplayMode = HOME;
 		setClearflag(ENABLE);
 		break;
 	case STEP_VAL_CONTROL:
-		*__MY_DISPLAY_MODE = HOME;
+		myDisplayMode = HOME;
 		setClearflag(ENABLE);
 		break;
 	case STEP_DIR_CONTROL:
-		*__MY_DISPLAY_MODE = HOME;
+		myDisplayMode = HOME;
 		setClearflag(ENABLE);
 			break;
 	case ON_OFF_CONTROL:
-		*__MY_DISPLAY_MODE = HOME;
+		myDisplayMode = HOME;
 		setClearflag(ENABLE);
 		break;
 	case COMPLETE_CONTROL:
-		*__MY_DISPLAY_MODE = HOME;
+		myDisplayMode = HOME;
 		setClearflag(ENABLE);
 		break;
 	default:
@@ -195,7 +167,7 @@ void buttonMENU_handler()
 }
 void buttonOK_handler()
 {
-	switch(*__MY_DISPLAY_MODE)	{
+	switch(myDisplayMode)	{
 	case HOME:
 		break;
 	case COUNTDOWN_SW_OFF:
@@ -206,21 +178,21 @@ void buttonOK_handler()
 		break;
 	case MENU_CONTROL:
 		if (getcurControl() == CONTROL_TRANS)	{
-			*__MY_DISPLAY_MODE = ON_OFF_CONTROL;
+			myDisplayMode = ON_OFF_CONTROL;
 			setClearflag(ENABLE);
 		}
 		else if (getcurControl() == CONTROL_STEP)	{
-			*__MY_DISPLAY_MODE = VOLTAGE_CONTROL;
+			myDisplayMode = VOLTAGE_CONTROL;
 			setClearflag(ENABLE);
 		}
 		break;
 	case VOLTAGE_CONTROL:
 		switch (getStepValorDir())	{
 		case STEP_VAL:
-			*__MY_DISPLAY_MODE = STEP_VAL_CONTROL;
+			myDisplayMode = STEP_VAL_CONTROL;
 			break;
 		case STEP_DIR:
-			*__MY_DISPLAY_MODE = STEP_DIR_CONTROL;
+			myDisplayMode = STEP_DIR_CONTROL;
 			break;
 		case STEP_CONFIRM:
 			triggerTaskflag(TASK_CTRL_STEPMOR, FLAG_EN);
@@ -231,11 +203,11 @@ void buttonOK_handler()
 		setClearflag(ENABLE);
 		break;
 	case STEP_VAL_CONTROL:
-		*__MY_DISPLAY_MODE = VOLTAGE_CONTROL;
+		myDisplayMode = VOLTAGE_CONTROL;
 		setClearflag(ENABLE);
 		break;
 	case STEP_DIR_CONTROL:
-		*__MY_DISPLAY_MODE = VOLTAGE_CONTROL;
+		myDisplayMode = VOLTAGE_CONTROL;
 		setClearflag(ENABLE);
 		break;
 	case ON_OFF_CONTROL:
@@ -250,11 +222,11 @@ void buttonOK_handler()
 		}
 
 		setSwitchtime();
-		*__MY_DISPLAY_MODE = COMPLETE_CONTROL;
+		myDisplayMode = COMPLETE_CONTROL;
 		setClearflag(ENABLE);
 		break;
 	case COMPLETE_CONTROL:
-		*__MY_DISPLAY_MODE = ON_OFF_CONTROL;
+		myDisplayMode = ON_OFF_CONTROL;
 		setClearflag(ENABLE);
 		break;
 	default:
@@ -263,7 +235,7 @@ void buttonOK_handler()
 }
 void buttonDOWN_handler()
 {
-	switch(*__MY_DISPLAY_MODE)	{
+	switch(myDisplayMode)	{
 	case HOME:
 		break;
 	case COUNTDOWN_SW_OFF:
@@ -326,7 +298,7 @@ void buttonDOWN_handler()
 }
 void buttonUP_handler()
 {
-	switch(*__MY_DISPLAY_MODE)	{
+	switch(myDisplayMode)	{
 	case HOME:
 		break;
 	case COUNTDOWN_SW_OFF:

@@ -12,10 +12,10 @@
 ../Core/Src/Protocol/MQTT.c:207:9:releaseMQTTclient	16	static
 ../Core/Src/Protocol/MQTT.c:216:9:configureMQTT	24	static
 ../Core/Src/Protocol/MQTT.c:245:9:sendConnectMessage	16	static
-../Core/Src/Protocol/MQTT.c:259:9:MQTT_checkNWavailable	16	static
+../Core/Src/Protocol/MQTT.c:259:9:MQTT_checkNWavailable	8	static
 ../Core/Src/Protocol/MQTT.c:292:9:MQTT_connect	16	static
 ../Core/Src/Protocol/MQTT.c:329:9:MQTT_disconnect	16	static
 ../Core/Src/Protocol/MQTT.c:342:9:MQTT_publish	40	static
-../Core/Src/Protocol/MQTT.c:370:9:MQTT_subcribe	32	static
-../Core/Src/Protocol/MQTT.c:384:9:checkSubcribe	24	static
-../Core/Src/Protocol/MQTT.c:391:6:MQTT_testReceive	4	static
+../Core/Src/Protocol/MQTT.c:370:9:MQTT_subcribe	56	static
+../Core/Src/Protocol/MQTT.c:392:9:checkSubcribe	24	static
+../Core/Src/Protocol/MQTT.c:399:6:MQTT_testReceive	4	static

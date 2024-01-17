@@ -35,7 +35,7 @@ typedef enum
 void Screen_Init(_RTC *myRTC);
 
 void Screen_Home_Origin(uint8_t ID, uint8_t connectflag);
-void Screen_Home_Sync(uint8_t time);
+void Screen_Home_Sync(uint16_t time);
 void Screen_Home_Calib(void);
 void Screen_Monitor_Station(uint8_t mode, uint16_t current);
 void Screen_Monitor_Node(uint8_t ID, uint8_t mode, uint16_t battery, uint8_t type, uint16_t voltage);

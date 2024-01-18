@@ -51,6 +51,8 @@ typedef struct {
 	uint8_t sec;
 }Calibtime_t;
 
+#define CALIB_TIME_INIT { 0, 0, 0}
+
 typedef struct {
 	uint8_t register2server : 1;
 	uint8_t subscribe : 1;
@@ -62,7 +64,6 @@ typedef struct {
 	uint8_t sendDataPeriod :1;
 	uint8_t sendNWready :1;
 	uint8_t sendDATACALIB :1;
-	uint8_t sendDATAafterCALIB : 1;
 	uint8_t sendcmdCtrlMBA : 1;
 	uint8_t sendcmdCtrlStepmotor : 1;
 	uint8_t sendcmdCalib : 1;
@@ -72,11 +73,12 @@ typedef struct {
 	uint8_t sendSTEPLIMIT : 1;
 }Task_handle_t;
 
-#define TASK_FLAG_INIT	{1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+#define TASK_FLAG_INIT	{1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 
 
 typedef struct {
-	Station_Mode_t StMODE ;
+//	Station_Mode_t StMODE ;
+	uint8_t prepare_flag : 1;
 	uint8_t stID;
 	uint16_t stCurrent;
 	uint16_t stVoltage;
@@ -100,7 +102,7 @@ extern SIM_t mySIM;
 
 extern uint8_t volatile sync_flag;
 
-#define STATION_T_INIT	{0, 8, 300, 0, 1, 0, NULL, TASK_FLAG_INIT}
+#define STATION_T_INIT	{0,  8, 300, 0, 1, 0, NULL, TASK_FLAG_INIT, CALIB_TIME_INIT}
 
 #define ACTIVE		0x01
 #define DEACTIVE	0x02

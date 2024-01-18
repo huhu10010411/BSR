@@ -356,13 +356,13 @@ void buttonUP_handler()
 		break;
 	}
 }
-void SW_LIMIT_MAX_handler()
-{
-	setClearflag(ENABLE);
-	A4988_DisableDriver();
-	setLimit(LIMIT_MAX);
-	triggerTaskflag(TASK_SEND_STEP_LIMIT, FLAG_EN);
-}
+//void SW_LIMIT_MAX_handler()
+//{
+//	setClearflag(ENABLE);
+//	A4988_DisableDriver();
+//	setLimit(LIMIT_MAX);
+//	triggerTaskflag(TASK_SEND_STEP_LIMIT, FLAG_EN);
+//}
 void SW_LIMIT_MIN_handler()
 {
 	setClearflag(ENABLE);

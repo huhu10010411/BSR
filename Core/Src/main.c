@@ -79,12 +79,16 @@ uint8_t volatile sync_flag = 0;       // 0 : calib  ; 1: synchronize sensor node
 
 uint32_t volatile  tmpadc= 0;
 uint16_t volatile  adccount = 0;
+uint32_t volatile  tmpadc1 = 0;
+uint16_t volatile  adccount1 = 0;
 
 uint32_t curtick = 0;
 uint32_t pretick = 0;
 
 uint32_t turnonMBAtick = 0;
 uint8_t turnonMBAflag = 0;
+
+uint8_t flag = 0;
 
 //extern uint8_t alarmflag;
 //uint8_t flag = 0;
@@ -99,7 +103,7 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-static void currentConvert(uint32_t volatile *adcval);
+static void ADC_Convert(uint32_t volatile *adcval, uint8_t CurorVol);
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 {
 	if (huart->Instance == USART1 )
@@ -123,22 +127,37 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
 		if(!sync_flag)	{
 
-			// turn OFF MBA
-			myStation.MBAstate = switchContactor(MBA_OFF);
+			if (flag == 0)	{
 
-			DS3231_ClearAlarm1();
+				// Set Mode Measure for Sensor node
+				Lora_Setmode(MEASURE, 0);
 
-			// Set Mode Measure for Sensor node
-			Lora_Setmode(MEASURE, 0);
+				DS3231_ClearAlarm1();
+				// Set alarm for Turn OFF MBA
+				DS3231_SetAlarm1(ALARM_MODE_HOUR_MIN_SEC_MATCHED, 0, myStation.calibTime.hour, myStation.calibTime.min, myStation.calibTime.sec + 3);
 
-			// get time of turn OFF MBA, after 15s turn ON MBA
-			turnonMBAtick = HAL_GetTick();
-			turnonMBAflag = 1;
+				flag = 1;
+			}
+			else if (flag == 1)	{
 
-			// Trigger task Start calib
-			triggerTaskflag(TASK_START_CALIB, FLAG_EN);
+				//Turn OFF MBA
+				myStation.MBAstate = switchContactor(MBA_OFF);
 
-			displayAfterSwitchoff = 1;
+				DS3231_ClearAlarm1();
+				DS3231_SetAlarm1(ALARM_MODE_HOUR_MIN_SEC_MATCHED, 0, myStation.calibTime.hour, myStation.calibTime.min, myStation.calibTime.sec + 4);
+				triggerTaskflag(TASK_START_CALIB, FLAG_EN);
+
+				displayAfterSwitchoff = 1;
+				flag = 2;
+			}
+			else {
+				//Turn OFF MBA
+				myStation.MBAstate = switchContactor(MBA_ON);
+
+				DS3231_ClearAlarm1();
+				flag = 0;
+			}
+
 		}
 		else {
 			Lora_Setmode(SLEEP, 0);
@@ -186,11 +205,28 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
 	if (hadc->Instance == hadc1.Instance)	{
-		tmpadc += HAL_ADC_GetValue(hadc);
+		tmpadc += HAL_ADC_GetValue(&hadc1);
 		adccount++;
-		currentConvert(&tmpadc);
+		ADC_Convert(&tmpadc, 0);
+	}
+	if (hadc->Instance == hadc2.Instance)	{
+		tmpadc1 += HAL_ADC_GetValue(&hadc2);
+		adccount1++;
+		ADC_Convert(&tmpadc1, 1);
 	}
 }
+
+//void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+//{
+//	if (htim->Instance == &htim3)	{
+//		// Turn OFF MBA for Calib
+//		myStation.MBAstate = switchContactor(MBA_OFF);
+//		// Start timer for Turn ON MBA
+//
+//		// Stop timer Turn OFF
+//		HAL_TIM_Base_Stop_IT(&htim3);
+//	}
+//}
 //void setStationMode(Station_Mode_t mode)
 //{
 //	myStation.StMODE = mode;
@@ -237,6 +273,7 @@ int main(void)
   MX_USART3_UART_Init();
   MX_TIM1_Init();
   MX_ADC1_Init();
+  MX_ADC2_Init();
   /* USER CODE BEGIN 2 */
   SSnode_list =list_create();
 
@@ -253,7 +290,7 @@ int main(void)
 	mySIM.mqttServer.willmsg = (uint8_t*)malloc(sizeof(myStation.stID));
 	sprintf((char*)mySIM.mqttServer.willmsg,"%d",myStation.stID);
 	mySIM.mqttClient.keepAliveInterval = 180;
-	sprintf(mySIM.mqttClient.clientID,"bsrclient%d",myStation.stID);
+	sprintf(mySIM.mqttClient.clientID,"bsrclientII&IL%d",myStation.stID);
 	mySIM.mqttReceive.qos =1;
 	mySIM.mqttServer.connect=0;
 
@@ -271,6 +308,7 @@ int main(void)
 
 	// GPS
 	initSerial_CFG();
+
 	initGPS(&myRTC);
 
 	initSIM();
@@ -288,12 +326,12 @@ int main(void)
 
 	initApp_Display();
 
-//	triggerTaskflag(TASK_GET_GPS_TIME, FLAG_EN);
+	triggerTaskflag(TASK_GET_GPS_TIME, FLAG_EN);
 
 //DS3231_GetTime(&myRTC);
 //	myRTC.Year = 24;
 //	myRTC.Month = 1;
-//	myRTC.Date = 16;
+//	myRTC.Date = 18;
 //	myRTC.DaysOfWeek = 3;
 //	myRTC.Hour = 15;
 //	myRTC.Min = 17;
@@ -316,24 +354,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-//
-//	  SIM_checkOperation();
-//	  if (flag == 0)	{
-//		  testLora_receive();
-//		  flag = 1;
-//	  }
-//		if (checkSensorMode(WAKE) == 1)	{
-//			Lora_Setmode(MEASURE,1);
-//		}
 
-//	  testLora_receive();
-	  // Turn on MBA after calib 15s
-	  if (turnonMBAflag)	{
-		  if (HAL_GetTick() - turnonMBAtick >= 15000)	{
-			  myStation.MBAstate = switchContactor(MBA_ON);
-			  turnonMBAflag = 0;
-		  }
-	  }
 	  processApp_MCU();
 	  processingApp_display();
 	  processApp_MQTT();
@@ -342,7 +363,7 @@ int main(void)
 
 //	  testSynchronize();
 
-	  HAL_Delay(50);
+	  HAL_Delay(20);
   }
   /* USER CODE END 3 */
 }
@@ -394,14 +415,32 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-
-static void currentConvert(uint32_t volatile *adcval)
+/*
+ *  @Para:  CurorVol : 0 Current, 1 Voltage
+ */
+static void ADC_Convert(uint32_t volatile *adcval, uint8_t CurorVol)
 {
-	if (adccount == 1000)	{
-		myStation.stCurrent = (uint16_t)( ( ( (*adcval)*3/4095) + 50)/6);
-		*adcval = 0;
-		adccount = 0;
+	switch (CurorVol)	{
+
+	case 0:
+		if (adccount == 1000)	{
+			myStation.stCurrent = (uint16_t)( ( ( (*adcval)*3/4095) + 50)/6);
+			*adcval = 0;
+			adccount = 0;
+		}
+		break;
+
+	case 1:
+		if (adccount1 == 1000)	{
+			myStation.stVoltage = (uint16_t)( ( ( (*adcval)*3/4095) + 50)/6);
+			*adcval = 0;
+			adccount1 = 0;
+		}
+		break;
+	default:
+		break;
 	}
+
 }
 /* USER CODE END 4 */
 

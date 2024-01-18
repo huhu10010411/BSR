@@ -15,7 +15,9 @@
 #define TOPIC_SUB		"BSR/SERVER2STATION/"
 #define TOPIC_SUB_BROADCAST		"BSR/SERVER2STATION"
 
-#define MQTT_RECEIVE_TEST_MSG	(uint8_t*)"\r\n+CMQTTRXSTART: 0,7,5\r\n+CMQTTRXTOPIC: 0,7\r\nbsr\0est\r\n+CMQTTRXPAYLOAD: 0,5\r\nhe\0oo\r\n+CMQTTRXEND: 0\r\n"
+#define MQTT_TXBUFF_SIZE   256
+
+extern uint8_t MQTT_Txbuff [MQTT_TXBUFF_SIZE];
 
 typedef enum {
 	CONTENT_TOPIC,

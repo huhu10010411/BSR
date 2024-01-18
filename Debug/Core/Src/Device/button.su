@@ -15,5 +15,4 @@
 ../Core/Src/Device/button.c:168:6:buttonOK_handler	8	static
 ../Core/Src/Device/button.c:236:6:buttonDOWN_handler	8	static
 ../Core/Src/Device/button.c:299:6:buttonUP_handler	8	static
-../Core/Src/Device/button.c:359:6:SW_LIMIT_MAX_handler	8	static
 ../Core/Src/Device/button.c:366:6:SW_LIMIT_MIN_handler	8	static

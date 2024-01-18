@@ -22,7 +22,7 @@
 #define MQTT_TIMEOUT_SHORT	800
 #define MQTT_TIMEOUT_VERYSHORT	400
 
-#define MQTT_TXBUFF_SIZE   512
+
 
 //static SIM_t *mySIM;
 
@@ -130,6 +130,7 @@ uint8_t MQTT_receiveGetPayload (uint8_t *MQTTbuff,uint16_t buffsize)
 {
 	return getContent(CONTENT_PAYLOAD, MQTTbuff, buffsize, mySIM.mqttReceive.payload, mySIM.mqttReceive.payloadLen);
 }
+
 uint8_t MQTT_receive(uint8_t *MQTTbuff,uint16_t buffsize)
 {
 	if ( !MQTT_receiveGetTopicandPayloadLength(MQTTbuff, buffsize) ) return 0;
@@ -153,8 +154,9 @@ uint8_t MQTT_connected(void)
 //		Serial_log_string("MQTT is connected to broker\r\n");
 		return 1;
 	}
+
 //	Serial_log_string("MQTT is disconnected to broker\r\n");
-	mySIM.mqttServer.connect = 0;
+//	mySIM.mqttServer.connect = 0;
 	return 0;
 }
 
@@ -258,20 +260,19 @@ uint8_t sendConnectMessage() {
 
 uint8_t MQTT_checkNWavailable (void)
 {
-//	static uint8_t count = 0;
+	static uint8_t count = 0;
 	if ( !SIM_checkCMD(SIM_CMD_SIMCARD_PIN) ) {
-//		count++;
-//		if (count == 10)	{
-//			count = 0;
-//			LCD_Clear();
-//			LCD_GotoXY(3,0);p
-//			LCD_Print("NO SIM");
-//
-//			SIM_sendCMD( (uint8_t*)"AT+CRESET", (uint8_t*)"OK", ENABLE_SIM_CHECKRES,
-//						ENABLE_MARKASREAD, SIM_TIMEOUT_LONG);
-////			Serial_log_string("Reset Module\r\n");
-//			HAL_Delay(10000);
-//		}
+		count++;
+		if (count == 10)	{
+			count = 0;
+			LCD_Clear();
+			LCD_GotoXY(3,0);
+			LCD_Print("NO SIM");
+
+			SIM_sendCMD( (uint8_t*)"AT+CRESET", (uint8_t*)"OK", ENABLE_SIM_CHECKRES,
+						ENABLE_MARKASREAD, SIM_TIMEOUT_LONG);
+			HAL_Delay(10000);
+		}
 		return 1;
 	}
 //	count = 0;
@@ -295,6 +296,7 @@ uint8_t MQTT_connect()
 		mySIM.mqttServer.connect = 1;
 		return 1;
 	}
+
 	if ( MQTT_checkNWavailable() )  return 0;
 
 	if ( !startMQTT() )		return 0;
@@ -317,7 +319,7 @@ uint8_t MQTT_connect()
 	if ( !(configureMQTT()) )		return 0;
 
 	if ( !sendConnectMessage() )	{
-		HAL_Delay(500);
+//		HAL_Delay(500);
 		return 0;
 	}
 
@@ -353,8 +355,7 @@ uint8_t MQTT_publish(uint8_t *topic, uint8_t *msg, uint16_t msglen)
 	if (check != SIM_RES_MSG)	return 0;
 //	if (SIM_sendCMD(topic, (uint8_t*)"OK", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 2000) != SIM_RES_MSG)		return 0;
 
-	sprintf((char*)MQTT_Txbuff,"AT+CMQTTPAYLOAD=0,%d",msglen);
-
+	sprintf((char*)MQTT_Txbuff, "AT+CMQTTPAYLOAD=0,%d", msglen);
 	if (SIM_sendCMD(MQTT_Txbuff, (uint8_t*)">", ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, MQTT_TIMEOUT_SHORT)!= SIM_RES_MSG)	return 0;
 
 	HAL_UART_Transmit(&huart1, msg, msglen, 0xFFFF);

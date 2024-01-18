@@ -32,12 +32,14 @@
 #define CHANGE_MODEPOS	4
 #define CHANGE_VALUE    5
 
-#define USER_MSG_HEADER_NUMBOF_ACT_STATION		(char*)"So luong station node dang hoat dong"
-#define USER_MSG_HEADER_NUMBOF_ACT_SENSOR		(char*)"So luong sensor node dang hoat dong"
-#define USER_MSG_HEADER_NUMBOF_FAIL_STATION		(char*)"So luong station node bi loi"
-#define USER_MSG_HEADER_NUMBOF_FAIL_SENSOR		(char*)"So luong sensor node bi loi"
+#define USER_MSG_HEADER_NUMBOF_ACT_STATION		(char*)"ACTIVE STATION:"
+#define USER_MSG_HEADER_NUMBOF_ACT_SENSOR		(char*)"ACTIVE SENSOR:"
+#define USER_MSG_HEADER_NUMBOF_FAIL_STATION		(char*)"FAIL STATION:"
+#define USER_MSG_HEADER_NUMBOF_FAIL_SENSOR		(char*)"FAIL SENSOR:"
 
+#define PACKBUFF_MAXLEN		256
 
+extern uint8_t Pack_buff [PACKBUFF_MAXLEN];
 
 typedef enum {
 	RES_OK = 0x01,

@@ -1,6 +1,5 @@
 ../Core/Src/Application/App_MQTT.c:21:6:initApp_MQTT	16	static
 ../Core/Src/Application/App_MQTT.c:30:9:dataCalibavailble	16	static
-../Core/Src/Application/App_MQTT.c:43:9:checkSensorState	24	static
-../Core/Src/Application/App_MQTT.c:56:9:checkSensorMode	24	static
-../Core/Src/Application/App_MQTT.c:68:6:sendNWready	16	static
-../Core/Src/Application/App_MQTT.c:74:6:processApp_MQTT	16	static
+../Core/Src/Application/App_MQTT.c:72:9:checkSensorReady	16	static
+../Core/Src/Application/App_MQTT.c:84:6:sendNWready	8	static
+../Core/Src/Application/App_MQTT.c:93:6:processApp_MQTT	16	static

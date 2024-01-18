@@ -21,8 +21,9 @@
 
 
 
-#define PACKBUFF_MAXLEN		512
+
 #define DATABUFF_MAXLEN		512
+
 uint8_t Pack_buff [PACKBUFF_MAXLEN];
 
 
@@ -176,6 +177,7 @@ uint8_t Serialize_Stationdata( uint8_t *Buffer, DATA_t dataType)
 //			break;
 		case DATA_MBA_STATE:
 			Buffer[buff_len++] = (uint8_t) (myStation.MBAstate);
+			break;
 		case DATA_STEP_REACH_LIMIT:
 			Buffer[buff_len++] = (uint8_t)getLimit();
 			break;
@@ -317,30 +319,30 @@ uint8_t sendData2Server( DATA_t dataType)
 	if ( !MQTT_publish( (uint8_t*)TOPIC_PUB, Pack_buff, pack_len) ) return 0;
 	return 1;
 }
-
-uint8_t sendRespond(CMD_t cmdType, RES_STATUS_t resStatus)
-{
-	uint16_t packlen = 0;
-	memset(Pack_buff, 0, PACKBUFF_MAXLEN);
-	packlen += createPack(PACKT_RESCMD, DATA_NONE, CMD_NONE);
-	Pack_buff[packlen++] = resStatus;
-	Pack_buff[packlen++] = cmdType;
-	switch (cmdType)	{
-	case CMD_CTRL_MBA:
-		Pack_buff[packlen++] = myStation.MBAstate;
-		break;
-	case CMD_CTRL_STEP_MOTOR:
-		twobyte2buff(Pack_buff + packlen, myStation.stepPosition);
-		packlen+= 2;
-		break;
-	default:
-		break;
-	}
-	packlen += addCRCtoPack(Pack_buff, packlen);
-
-	if ( !MQTT_publish( (uint8_t*)TOPIC_PUB, Pack_buff, packlen) ) return 0;
-	return 1;
-}
+//
+//uint8_t sendRespond(CMD_t cmdType, RES_STATUS_t resStatus)
+//{
+//	uint16_t packlen = 0;
+//	memset(Pack_buff, 0, PACKBUFF_MAXLEN);
+//	packlen += createPack(PACKT_RESCMD, DATA_NONE, CMD_NONE);
+//	Pack_buff[packlen++] = resStatus;
+//	Pack_buff[packlen++] = cmdType;
+//	switch (cmdType)	{
+//	case CMD_CTRL_MBA:
+//		Pack_buff[packlen++] = myStation.MBAstate;
+//		break;
+//	case CMD_CTRL_STEP_MOTOR:
+//		twobyte2buff(Pack_buff + packlen, myStation.stepPosition);
+//		packlen+= 2;
+//		break;
+//	default:
+//		break;
+//	}
+//	packlen += addCRCtoPack(Pack_buff, packlen);
+//
+//	if ( !MQTT_publish( (uint8_t*)TOPIC_PUB, Pack_buff, packlen) ) return 0;
+//	return 1;
+//}
 uint8_t checkCRC(uint8_t *buffer, uint16_t bufferlen)
 {
 	if ( buffer2num(buffer + bufferlen - 4) != crc32( (char*)buffer, bufferlen - 4) ) return 0;
@@ -466,7 +468,6 @@ static MBA_state_t getMBAstate(uint8_t *Msg)
 	default:
 		break;
 	}
-	myStation.MBAstate = res;
 	return res;
 }
 static void  getCtrlStepinfor(uint8_t *Msg)
@@ -490,19 +491,19 @@ static void  getCtrlStepinfor(uint8_t *Msg)
 	}
 
 }
-void markassentDatacalibsuccess(void)
-{
-	Node * current =myStation.ssNode_list->head->next;
-		while (current != myStation.ssNode_list->tail)	{
-
-			if (current->SSnode.sentDatacalib && current->SSnode.dataCalibAvailable) 	{
-				current->SSnode.dataCalibAvailable = 0;
-				current->SSnode.sentDatacalib = 0;
-				memset(current->SSnode.dataCalibBuffer, 0, DATACALIB_SIZE);
-			}
-			current = current->next;
-		}
-}
+//void markassentDatacalibsuccess(void)
+//{
+//	Node * current =myStation.ssNode_list->head->next;
+//		while (current != myStation.ssNode_list->tail)	{
+//
+//			if (current->SSnode.dataCalibAvailable) 	{
+//				current->SSnode.dataCalibAvailable = 0;
+////				current->SSnode.sentDatacalib = 0;
+//				memset(current->SSnode.dataCalibBuffer, 0, DATACALIB_SIZE);
+//			}
+//			current = current->next;
+//		}
+//}
 void processingComingMsg(uint8_t *Msg, uint16_t Msg_len, uint8_t stID)
 {
 	if ( !checkCRC(Msg, Msg_len) )	return;
@@ -575,7 +576,7 @@ void processingComingMsg(uint8_t *Msg, uint16_t Msg_len, uint8_t stID)
 					break;
 				case CMD_CTRL_MBA:
 					//Get MBA state from package and switch contactor
-					switchContactor(getMBAstate(Msg));
+					myStation.MBAstate = switchContactor(getMBAstate(Msg));
 					break;
 				case CMD_CTRL_STEP_MOTOR:
 					//Get data to control step motor
@@ -588,6 +589,9 @@ void processingComingMsg(uint8_t *Msg, uint16_t Msg_len, uint8_t stID)
 					epochtine2RTC(tmptime, &tmpRTC);
 					// set synchronize sensor flag
 					sync_flag = 1;
+
+					//
+					triggerTaskflag(TASK_GET_GPS_TIME, FLAG_EN);
 					// Set alarm for synchronize
 					DS3231_ClearAlarm1();
 					DS3231_SetAlarm1(ALARM_MODE_ALL_MATCHED, tmpRTC.Date, tmpRTC.Hour, tmpRTC.Min, tmpRTC.Sec);
@@ -619,30 +623,30 @@ void processingComingMsg(uint8_t *Msg, uint16_t Msg_len, uint8_t stID)
 				break;
 			}
 			break;
-		case PACKT_RESCMD:
-			cmdType = Msg[3];
-			switch (cmdType)	{
-			case CMD_CTRL_MBA:
-				if (Msg[RESSTATUS_POS] == RES_OK)	{
-					uint8_t len= sprintf((char*)mySIM.sms.CtrlON.data,"Ctrl MBA success");
-					mySIM.sms.CtrlON.datalength = len;
-					triggerSMSreturn(SMS_CMD_CTRL_ON, ENABLE);
-				}
-				break;
-			case CMD_CTRL_STEP_MOTOR:
-				if (Msg[RESSTATUS_POS] == RES_OK)	{
-					uint8_t len= sprintf((char*)mySIM.sms.CtrlDEC.data,"Ctrl StepMor success");
-					mySIM.sms.CtrlDEC.datalength = len;
-					triggerSMSreturn(SMS_CMD_CTRL_DEC, ENABLE);
-				}
-				break;
-			case CMD_SMS_CALIB:
-
-				break;
-			default:
-				break;
-			}
-			break;
+//		case PACKT_RESCMD:
+//			cmdType = Msg[3];
+//			switch (cmdType)	{
+//			case CMD_CTRL_MBA:
+//				if (Msg[RESSTATUS_POS] == RES_OK)	{
+//					uint8_t len= sprintf((char*)mySIM.sms.CtrlON.data,"Ctrl MBA success");
+//					mySIM.sms.CtrlON.datalength = len;
+//					triggerSMSreturn(SMS_CMD_CTRL_ON, ENABLE);
+//				}
+//				break;
+//			case CMD_CTRL_STEP_MOTOR:
+//				if (Msg[RESSTATUS_POS] == RES_OK)	{
+//					uint8_t len= sprintf((char*)mySIM.sms.CtrlDEC.data,"Ctrl StepMor success");
+//					mySIM.sms.CtrlDEC.datalength = len;
+//					triggerSMSreturn(SMS_CMD_CTRL_DEC, ENABLE);
+//				}
+//				break;
+//			case CMD_SMS_CALIB:
+//
+//				break;
+//			default:
+//				break;
+//			}
+//			break;
 		case PACKT_RESREGISTER:
 			// Get Register status
 			if (Msg[RESSTATUS_POS] == RES_OK)	{

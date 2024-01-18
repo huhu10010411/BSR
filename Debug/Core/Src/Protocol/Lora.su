@@ -5,5 +5,5 @@
 ../Core/Src/Protocol/Lora.c:109:6:MarkAsReadData_LORA	4	static
 ../Core/Src/Protocol/Lora.c:114:6:isIDExist	24	static
 ../Core/Src/Protocol/Lora.c:124:6:Lora_receive	384	dynamic
-../Core/Src/Protocol/Lora.c:241:9:Lora_Setmode	24	static
-../Core/Src/Protocol/Lora.c:263:6:testLora_receive	8	static
+../Core/Src/Protocol/Lora.c:246:9:Lora_Setmode	24	static
+../Core/Src/Protocol/Lora.c:268:6:testLora_receive	8	static

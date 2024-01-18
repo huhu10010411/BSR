@@ -50,9 +50,6 @@ bool checkTaskflag (Task_t task)
 	case TASK_SEND_DATAPERIOD:
 		res = (bool)myStation.task.sendDataPeriod;
 		break;
-	case TASK_SEND_DATAAFTERCALIB:
-		res = (bool)myStation.task.sendDATAafterCALIB;
-		break;
 	case TASK_SEND_CTRLMBA:
 		res = (bool)myStation.task.sendcmdCtrlMBA;
 		break;
@@ -114,9 +111,6 @@ void triggerTaskflag (Task_t task, Flag_t ENorDIS)
 		break;
 	case TASK_SEND_DATAPERIOD:
 		myStation.task.sendDataPeriod = ENorDIS;
-		break;
-	case TASK_SEND_DATAAFTERCALIB:
-		myStation.task.sendDATAafterCALIB = ENorDIS;
 		break;
 	case TASK_SEND_CTRLMBA:
 		myStation.task.sendcmdCtrlMBA = ENorDIS;

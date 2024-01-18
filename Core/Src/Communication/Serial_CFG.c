@@ -21,18 +21,18 @@
 
 #define __SCFG_UART &huart2
 #define __SCFG_DMA_UART &hdma_usart2_rx
-#define Rx_SIZE_CFG     256
-#define Main_SIZE_CFG    1024
-#define GPS_RXBUFF_MAXLEN	512
+#define Rx_SIZE_CFG     512
+//#define Main_SIZE_CFG    512
+
 
 //UART_HandleTypeDef *__SCFG_UART;
 //DMA_HandleTypeDef  *__SCFG_DMA_UART;
 
 uint8_t Rxbuff_CFG[Rx_SIZE_CFG];
-uint8_t Mainbuff_CFG[Main_SIZE_CFG];
+//uint8_t Mainbuff_CFG[Main_SIZE_CFG];
 uint8_t GPS_rxbuffer[GPS_RXBUFF_MAXLEN];
-uint16_t oldPos_CFG=0, newPos_CFG =0;
-uint16_t head_CFG = 0, tail_CFG = 0;
+//uint16_t oldPos_CFG=0, newPos_CFG =0;
+//uint16_t head_CFG = 0, tail_CFG = 0;
 
 uint16_t GPS_size = 0;
 uint8_t tx_buff[30];
@@ -45,6 +45,9 @@ static uint32_t tick = 0;
 _RTC *__MY_RTC;
 
 uint8_t alarmflag = 0;
+
+
+uint8_t volatile getflag = 0;
 
 void initSerial_CFG()
 {
@@ -67,42 +70,43 @@ void enableReceiveDMAtoIdle_CFG(void)
 void Serial_CFG_Callback(uint16_t Size)
 {
 
-	oldPos_CFG = newPos_CFG;  // Update the last position before copying new data
-
-	/* If the data in large and it is about to exceed the buffer size, we have to route it to the start of the buffer
-	 * This is to maintain the circular buffer
-	 * The old data in the main buffer will be overlapped
-	 */
-	if (oldPos_CFG+Size > Main_SIZE_CFG)  // If the current position + new data size is greater than the main buffer
-	{
-		uint8_t datatocopy = Main_SIZE_CFG-oldPos_CFG;  // find out how much space is left in the main buffer
-		memcpy ((uint8_t *)Mainbuff_CFG+oldPos_CFG, (uint8_t *)Rxbuff_CFG, datatocopy);  // copy data in that remaining space
-
-		oldPos_CFG = 0;  // point to the start of the buffer
-		memcpy ((uint8_t *)Mainbuff_CFG, (uint8_t *)Rxbuff_CFG+datatocopy, (Size-datatocopy));  // copy the remaining data
-		newPos_CFG = (Size-datatocopy);  // update the position
-	}
-
-	/* if the current position + new data size is less than the main buffer
-	 * we will simply copy the data into the buffer and update the position
-	 */
-	else
-	{
-		memcpy ((uint8_t *)Mainbuff_CFG+oldPos_CFG, (uint8_t *)Rxbuff_CFG, Size);
-		newPos_CFG = Size+oldPos_CFG;
-	}
-
-	/* Update the position of the Head
-	 * If the current position + new size is less then the buffer size, Head will update normally
-	 * Or else the head will be at the new position from the beginning
-	 */
-	if (head_CFG+Size < Main_SIZE_CFG) head_CFG = head_CFG+Size;
-	else head_CFG = head_CFG + Size - Main_SIZE_CFG;
+//	oldPos_CFG = newPos_CFG;  // Update the last position before copying new data
+//
+//	/* If the data in large and it is about to exceed the buffer size, we have to route it to the start of the buffer
+//	 * This is to maintain the circular buffer
+//	 * The old data in the main buffer will be overlapped
+//	 */
+//	if (oldPos_CFG+Size > Main_SIZE_CFG)  // If the current position + new data size is greater than the main buffer
+//	{
+//		uint8_t datatocopy = Main_SIZE_CFG-oldPos_CFG;  // find out how much space is left in the main buffer
+//		memcpy ((uint8_t *)Mainbuff_CFG+oldPos_CFG, (uint8_t *)Rxbuff_CFG, datatocopy);  // copy data in that remaining space
+//
+//		oldPos_CFG = 0;  // point to the start of the buffer
+//		memcpy ((uint8_t *)Mainbuff_CFG, (uint8_t *)Rxbuff_CFG+datatocopy, (Size-datatocopy));  // copy the remaining data
+//		newPos_CFG = (Size-datatocopy);  // update the position
+//	}
+//
+//	/* if the current position + new data size is less than the main buffer
+//	 * we will simply copy the data into the buffer and update the position
+//	 */
+//	else
+//	{
+//		memcpy ((uint8_t *)Mainbuff_CFG+oldPos_CFG, (uint8_t *)Rxbuff_CFG, Size);
+//		newPos_CFG = Size+oldPos_CFG;
+//	}
+//
+//	/* Update the position of the Head
+//	 * If the current position + new size is less then the buffer size, Head will update normally
+//	 * Or else the head will be at the new position from the beginning
+//	 */
+//	if (head_CFG+Size < Main_SIZE_CFG) head_CFG = head_CFG+Size;
+//	else head_CFG = head_CFG + Size - Main_SIZE_CFG;
 
 	if ( checkTaskflag(TASK_GET_GPS_TIME) )	{
 		memset(GPS_rxbuffer, 0, GPS_RXBUFF_MAXLEN);
 		memcpy(GPS_rxbuffer, Rxbuff_CFG, Size);
 		GPS_size = Size;
+//		getflag = 1;
 		getGPS_time(__MY_RTC);
 	}
 
@@ -187,30 +191,45 @@ void Serial_CFG_Callback(uint16_t Size)
 //	}
 //}
 
-void MarkAsReadData_CFG(void)
-{
-	tail_CFG = head_CFG;
-}
+//void MarkAsReadData_CFG(void)
+//{
+//	tail_CFG = head_CFG;
+//}
 
 uint8_t getGPS_time(_RTC *myRTC)
 {
+//	triggerTaskflag(TASK_GET_GPS_TIME, FLAG_DIS);
 //	if (__MY_GPS->getFlag) return 0;
 	if ( !DS3231_GetTime(myRTC) )		return 0;
 	uint16_t gpslen = GPS_size;
-	uint8_t *currPos = isWordinBuff(GPS_rxbuffer, gpslen, (uint8_t*)"$GPRMC");
+//	uint8_t *currPos = isWordinBuff(GPS_rxbuffer, gpslen, (uint8_t*)"$GPRMC");
+	uint8_t *currPos = (uint8_t*)strstr((char*)GPS_rxbuffer, "$GPRMC" );
 	if ( currPos == NULL )	{
 		return 0;
 	}
 	uint16_t remainlen = getRemainsize(currPos, GPS_rxbuffer, gpslen);
-	// Get time to buffer
-	uint8_t timebuffer [10];
-	if ( getBetween((uint8_t*)",", (uint8_t*)".", currPos, remainlen, timebuffer) != 6 )	{
+	if (remainlen < 7) {
 		return 0;
 	}
+	currPos+= 7;
+
+	// Get time to buffer
+	uint8_t timebuffer [10];
+	memcpy(timebuffer, currPos, 6);
+	for( uint8_t i = 0 ; i < 6; i++)
+	{
+		if (timebuffer[i] > '9' || timebuffer[i] < '0'){
+			return 0;
+		}
+	}
+
 	// Convert time from buffer and save to myRTC
 	uint8_t tmphour[3];
 	uint8_t tmpmin[3];
 	uint8_t tmpsec[3];
+	memset(tmphour, 0, 3);
+	memset(tmpmin, 0, 3);
+	memset(tmpsec, 0, 3);
 	memcpy(tmphour, timebuffer, 2);
 	memcpy(tmpmin, timebuffer + 2, 2);
 	memcpy(tmpsec, timebuffer + 4, 2);

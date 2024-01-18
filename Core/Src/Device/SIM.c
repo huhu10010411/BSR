@@ -16,6 +16,7 @@
 #include "Task.h"
 #include "main.h"
 #include "usart.h"
+#include "ServerMessage.h"
 
 
 #define SIM_UART		&huart1
@@ -123,9 +124,11 @@ void SIM_callback(uint16_t Size)
 		if  (isWordinBuff(SIMRxbuff, Size, (uint8_t*)"+CMQTTCONNLOST:") != NULL) 	{
 			mySIM.mqttServer.connect = 0;
 		}
+		memset(SIMRxbuff, 0, SIM_RXBUFF_SIZE);
 //		Serial_log_string("Rx: ");
 //		Serial_log_buffer(SIMRxbuff, Size);
 //		Serial_log_string(" ");
+
 
 }
 
@@ -135,9 +138,9 @@ SIM_res_t SIM_checkMsg(uint8_t *Msg, uint16_t timeout)
 	uint8_t dataSize = 0;
 	uint8_t tmpdbuff[SIM_BUFF_SIZE];
 	memset( (char*)tmpdbuff, 0, SIM_BUFF_SIZE );
-	timeout /= 10;
+	timeout /= 20;
 
-	for (uint16_t i = 0; i < 10 ; i++)
+	for (uint8_t i = 0; i < 20 ; i++)
 	{
 		HAL_Delay(timeout);
 
@@ -171,7 +174,7 @@ SIM_res_t SIM_checkMsg(uint8_t *Msg, uint16_t timeout)
 
 SIM_res_t SIM_sendCMD(uint8_t *cmd, uint8_t *checkResMsg, uint8_t CheckResENorDIS, uint8_t ENorDISmarkasread, uint32_t timeout)
 {
-	uint8_t SIM_Txbuff[128];
+	uint8_t SIM_Txbuff[256];
 	uint8_t len = sprintf( (char*)SIM_Txbuff, "%s\r\n", cmd);
 	HAL_UART_Transmit(SIM_UART, SIM_Txbuff, len, 0xFFFF) ;
 
@@ -243,7 +246,6 @@ void SIM_checkOperation(void)
 {
 		 SIM_sendCMD((uint8_t*)"AT+CMGL=\"REC UNREAD\"", (uint8_t*)"OK",
 				 ENABLE_SIM_CHECKRES, ENABLE_MARKASREAD, 1000);
-
 
 }
 

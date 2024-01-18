@@ -21,21 +21,21 @@ uint8_t SMSreturn (SMS_CMD_t smsCMD)
 {
 	SMS_request_t *tmpSMScmd;
 	switch (smsCMD) 	{
-	case SMS_CMD_CTRL_ON:
-		tmpSMScmd = &__MY_SMS->CtrlON;
-		break;
-	case SMS_CMD_CTRL_OFF:
-		tmpSMScmd = &__MY_SMS->CtrlOFF;
-		break;
-	case SMS_CMD_CTRL_INC:
-		tmpSMScmd = &__MY_SMS->CtrlINC;
-		break;
-	case SMS_CMD_CTRL_DEC:
-		tmpSMScmd = &__MY_SMS->CtrlDEC;
-		break;
-	case SMS_CMD_CTRL_CALIB:
-		tmpSMScmd = &__MY_SMS->CtrlCALIB;
-		break;
+//	case SMS_CMD_CTRL_ON:
+//		tmpSMScmd = &__MY_SMS->CtrlON;
+//		break;
+//	case SMS_CMD_CTRL_OFF:
+//		tmpSMScmd = &__MY_SMS->CtrlOFF;
+//		break;
+//	case SMS_CMD_CTRL_INC:
+//		tmpSMScmd = &__MY_SMS->CtrlINC;
+//		break;
+//	case SMS_CMD_CTRL_DEC:
+//		tmpSMScmd = &__MY_SMS->CtrlDEC;
+//		break;
+//	case SMS_CMD_CTRL_CALIB:
+//		tmpSMScmd = &__MY_SMS->CtrlCALIB;
+//		break;
 	case SMS_CMD_GET_STATUS:
 		tmpSMScmd = &__MY_SMS->GetStatus;
 		break;
@@ -55,6 +55,7 @@ uint8_t SMSreturn (SMS_CMD_t smsCMD)
 void processApp_SMS(void)
 {
 	processingSMS();
+
 	// check for new SMS request
 	if (checkSMSrequest(SMS_CMD_CTRL_ON) || checkSMSrequest(SMS_CMD_CTRL_OFF) )	{
 		triggerTaskflag(TASK_SEND_CTRLMBA, FLAG_EN);
@@ -75,23 +76,6 @@ void processApp_SMS(void)
 		triggerTaskflag(TASK_SEND_GETSENSOR, FLAG_EN);
 	}
 // Check for return SMS
-	if (checkSMSreturn(SMS_CMD_CTRL_ON))	{
-		SMSreturn(SMS_CMD_CTRL_ON);
-		triggerSMSreturn(SMS_CMD_CTRL_ON, SMS_CMD_DISABLE);
-	}
-//	if (checkSMSreturn(SMS_CMD_CTRL_OFF))	{
-//		SMSreturn(SMS_CMD_CTRL_OFF);
-//	}
-//	if (checkSMSreturn(SMS_CMD_CTRL_INC))	{
-//		SMSreturn(SMS_CMD_CTRL_INC);
-//	}
-	if (checkSMSreturn(SMS_CMD_CTRL_DEC))	{
-		SMSreturn(SMS_CMD_CTRL_DEC);
-		triggerSMSreturn(SMS_CMD_CTRL_DEC, SMS_CMD_DISABLE);
-	}
-//	if (checkSMSreturn(SMS_CMD_CTRL_CALIB))	{
-//		SMSreturn(SMS_CMD_CTRL_CALIB);
-//	}
 	if (checkSMSreturn(SMS_CMD_GET_STATUS))	{
 		SMSreturn(SMS_CMD_GET_STATUS);
 		triggerSMSreturn(SMS_CMD_GET_STATUS, SMS_CMD_DISABLE);
@@ -104,5 +88,24 @@ void processApp_SMS(void)
 		SMSreturn(SMS_CMD_GET_SENSOR);
 		triggerSMSreturn(SMS_CMD_GET_SENSOR, SMS_CMD_DISABLE);
 	}
+
+//	if (checkSMSreturn(SMS_CMD_CTRL_ON))	{
+//		SMSreturn(SMS_CMD_CTRL_ON);
+//		triggerSMSreturn(SMS_CMD_CTRL_ON, SMS_CMD_DISABLE);
+//	}
+//	if (checkSMSreturn(SMS_CMD_CTRL_OFF))	{
+//		SMSreturn(SMS_CMD_CTRL_OFF);
+//	}
+//	if (checkSMSreturn(SMS_CMD_CTRL_INC))	{
+//		SMSreturn(SMS_CMD_CTRL_INC);
+//	}
+//	if (checkSMSreturn(SMS_CMD_CTRL_DEC))	{
+//		SMSreturn(SMS_CMD_CTRL_DEC);
+//		triggerSMSreturn(SMS_CMD_CTRL_DEC, SMS_CMD_DISABLE);
+//	}
+//	if (checkSMSreturn(SMS_CMD_CTRL_CALIB))	{
+//		SMSreturn(SMS_CMD_CTRL_CALIB);
+//	}
+
 }
 

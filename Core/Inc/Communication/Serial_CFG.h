@@ -19,8 +19,12 @@
 
 #define MY_TIME_ZONE	7
 
+#define GPS_RXBUFF_MAXLEN	512
+
 extern uint8_t volatile isSerialConfig;
 extern UART_HandleTypeDef *__SCFG_UART;
+
+extern uint8_t GPS_rxbuffer[GPS_RXBUFF_MAXLEN];
 //extern DMA_HandleTypeDef  *__SCFG_DMA_UART;
 
 typedef struct {

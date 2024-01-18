@@ -219,6 +219,11 @@ void Lora_receive(uint8_t *Msg, uint8_t msglen)
 					current->SSnode.V_type = vtype;
 					current->SSnode.V_value = Vperiod;
 					current->SSnode.Battery = vbat;
+
+					if (myStation.prepare_flag) {
+						current->SSnode.Ready = 1;
+					}
+
 					break;
 				case 3:
 					current->SSnode.V_type = vtype;

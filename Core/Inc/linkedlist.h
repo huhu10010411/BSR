@@ -38,8 +38,8 @@ typedef struct{
 	uint16_t volatile V_value;			// Voltage value
 	sensor_state_t	Sensor_state;
 	uint8_t dataCalibAvailable;
-	uint8_t sentDatacalib;
-	sensor_mode_t sensorMode;
+	uint8_t Ready : 1;
+	volatile sensor_mode_t sensorMode;
 	uint8_t dataCalibBuffer[DATACALIB_SIZE];
 }SensorNode_t;
 

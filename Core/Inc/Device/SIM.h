@@ -118,7 +118,7 @@ typedef struct {
 typedef struct {
 //    char *username;
 //    char *pass;
-    char clientID[11];
+    char clientID[20];
     unsigned short keepAliveInterval;
 } mqttClient_t;
 
